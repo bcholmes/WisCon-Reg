@@ -1,0 +1,65 @@
+@startuml
+title Online Registration Entity Relationship Diagram
+'hide the spot
+hide circle
+
+'avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity reg_con_info {
+* id : INT <<auto_increment>>
+--
+* name : VARCHAR(90)
+* perennial_con_id : int
+* header_img_name : VARCHAR(90)
+* active_from_time : TIMESTAMP
+* active_to_time : TIMESTAMP
+* reg_open_time : TIMESTAMP
+* reg_close_time : TIMESTAMP
+* con_start_date : DATE
+* con_end_date : DATE
+}
+
+entity reg_perennial_con_info {
+* id : INT <<auto_increment>>
+--
+* name : VARCHAR(90)
+* website_url: varchar(255)
+}
+
+entity reg_offering {
+* id : INT <<auto_increment>>
+--
+* name : varchar(90)
+* con_id : INT
+* start_time : TIMESTAMP
+* end_time : TIMESTAMP
+  minimum_price : numeric(13,2)
+* suggested_price : numeric(13,2)
+  maximum_price : numeric(13,2)
+}
+
+entity reg_order {
+* id : INT <<auto_increment>>
+--
+}
+
+entity reg_order_item {
+* id : INT <<auto_increment>>
+--
+* order_id : INT
+* offering_id : INT
+}
+
+entity reg_admin_user {
+* id : INT <<auto_increment>>
+--
+* name : varchar(255)
+}
+
+reg_con_info }|--|| reg_perennial_con_info : perennial_con_id
+reg_order ||--o{ reg_order_item : order_id
+reg_order_item }o--|| reg_offering : offering_id
+reg_offering }|--|| reg_con_info : con_id
+
+@enduml
