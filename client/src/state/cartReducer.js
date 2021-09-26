@@ -3,8 +3,20 @@ import { createStore } from 'redux'
 const cartReducer = (state, action) => {
     return { 
         cart: [
-            "fred",
-            "barney"
+            {
+                offering: {
+                    name: "Adult Membership"
+                },
+                for: "Sam Carruthers",
+                amount: 65.00
+            },
+            {
+                offering: {
+                    name: "Adult Membership"
+                },
+                for: "Brad Carruthers",
+                amount: 65.00
+            }
         ]
     };
 };

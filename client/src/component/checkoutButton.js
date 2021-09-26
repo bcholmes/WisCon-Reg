@@ -6,9 +6,15 @@ class CheckoutButton extends Component {
     render() {
         return (
             <div className="text-center">
-                <Button variant="secondary">Checkout</Button>
+                <Button variant="secondary" onClick={() => this.handleClick()}>Checkout</Button>
             </div>
         )
+    }
+
+    handleClick() {
+        if (this.props.onClick) {
+            this.props.onClick();
+        }
     }
 }
 
