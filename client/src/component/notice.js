@@ -4,7 +4,7 @@ class Notice extends Component {
 
     render() {
         return (
-            <p class="mt-2 text-muted">
+            <p className="mt-2 text-muted">
                 Note that all members are expected to abide by {' '}
                 <a href="http://wiscon.net/policies/anti-harassment/code-of-conduct/" target="_blank" rel="noreferrer">
                     WisCon's Code of Conduct

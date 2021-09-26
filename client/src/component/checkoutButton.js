@@ -1,12 +1,27 @@
 import React, { Component } from 'react';
 import Button from 'react-bootstrap/Button';
+import store from '../state/cartReducer'
 
 class CheckoutButton extends Component {
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            enabled: store.getState().cart.length > 0
+        }
+
+        store.subscribe(() => {
+            this.setState({
+                enabled: store.getState().cart.length > 0
+            });
+        });
+    }
 
     render() {
         return (
             <div className="text-center">
-                <Button variant="secondary" onClick={() => this.handleClick()}>Checkout</Button>
+                <Button variant="secondary" onClick={() => this.handleClick()} disabled={!this.state.enabled}>Checkout</Button>
             </div>
         )
     }
