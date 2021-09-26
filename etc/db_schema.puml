@@ -37,6 +37,7 @@ entity reg_offering {
   minimum_price : numeric(13,2)
 * suggested_price : numeric(13,2)
   maximum_price : numeric(13,2)
+* quantity_available : int
 }
 
 entity reg_order {
@@ -55,6 +56,7 @@ entity reg_admin_user {
 * id : INT <<auto_increment>>
 --
 * name : varchar(255)
+* password : varchar(255)
 }
 
 reg_con_info }|--|| reg_perennial_con_info : perennial_con_id
