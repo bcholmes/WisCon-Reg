@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 
 import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
@@ -12,7 +13,10 @@ class PageHeader extends Component {
         super(props);
 
         this.state = {
-            showModal: false
+            showModal: false,
+            userid: '',
+            password: '',
+            loginEnabled: false
         };
     }
 
@@ -26,7 +30,7 @@ class PageHeader extends Component {
                         <Nav.Link href="https://wiscon.net">Find My Registration</Nav.Link>
                     </Nav>
                     <Nav className="navbar-expand-md navbar-dark bg-dark ">
-                        <Nav.Link onClick={() => this.login()}>Admin</Nav.Link>
+                        <Nav.Link onClick={() => this.showLoginModal()}>Admin</Nav.Link>
                     </Nav>
                 </Navbar>
             </header>,
@@ -38,15 +42,15 @@ class PageHeader extends Component {
                     <Modal.Body>
                         <Form.Group className="mb-3" controlId="formEmail">
                             <Form.Label className="sr-only">Email</Form.Label>
-                            <Form.Control type="email" placeholder="Enter email" />
+                            <Form.Control type="email" placeholder="Enter email" value={this.state.userid} onChange={(e) => this.setUserid(e.target.value)}/>
                         </Form.Group>
                         <Form.Group className="mb-3" controlId="formPasswod">
                             <Form.Label className="sr-only">Password</Form.Label>
-                            <Form.Control type="password" placeholder="Password" />
+                            <Form.Control type="password" placeholder="Password"  value={this.state.password} onChange={(e) => this.setPassword(e.target.value)}/>
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="primary">
+                        <Button variant="primary" onClick={() => this.processLogin()} disabled={!this.state.loginEnabled}>
                             Login
                         </Button>
                     </Modal.Footer>
@@ -55,16 +59,59 @@ class PageHeader extends Component {
         ]
     }
 
+    setUserid(userid) {
+        let state = this.state;
+        let enabled = state.loginEnabled;
+        if (userid && this.state.password) {
+            enabled = true;
+        } else {
+            enabled = false;
+        }
+        this.setState({
+            ...state,
+            userid: userid,
+            loginEnabled: enabled
+        });
+    }
+
+    setPassword(value) {
+        let state = this.state;
+        let enabled = state.loginEnabled;
+        if (this.state.userid && value) {
+            enabled = true;
+        } else {
+            enabled = false;
+        }
+        this.setState({
+            ...state,
+            password: value,
+            loginEnabled: enabled
+        });
+    }
+
     handleClose() {
         this.setState({
             showModal: false
         });
     }
 
-    login() {
+    showLoginModal() {
         this.setState({
             showModal: true
         });
+    }
+
+    processLogin() {
+        axios.post('https://wisconregtest.bcholmes.org/api/authenticate.php', {
+            userid: this.state.userid,
+            password: this.state.password
+        })
+            .then(function (response) {
+
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
     }
 }
 
