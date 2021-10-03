@@ -1,5 +1,5 @@
 import { createStore, combineReducers } from 'redux'
-import { ADD_AUTH_CREDENTIAL } from './authActions';
+import { ADD_AUTH_CREDENTIAL, LOGOUT } from './authActions';
 import { ADD_TO_CART } from './cartActions';
 
 const cartInitialState = {
@@ -21,7 +21,9 @@ const cartInitialState = {
     ]
 };
 
-const authInitialState = {}
+const authInitialState = {
+    jwt: undefined
+}
 
 const cart = (state = cartInitialState, action) => {
     switch (action.type) {
@@ -43,6 +45,10 @@ const auth = (state = authInitialState, action) => {
             return {
                 jwt: action.payload.jwt
             }
+        case LOGOUT: 
+            return {
+                jwt: undefined
+            };
         default:
             return state;
     }

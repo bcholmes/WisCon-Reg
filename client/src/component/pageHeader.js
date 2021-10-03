@@ -6,10 +6,18 @@ import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/esm/Modal';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import { addAuthCredential } from '../state/authActions';
+import NavDropdown from 'react-bootstrap/NavDropdown';
+import { addAuthCredential, logout } from '../state/authActions';
 import store from '../state/store';
+import PropTypes from "prop-types";
+import { withRouter } from "react-router";
 
 class PageHeader extends Component {
+    static propTypes = {
+        match: PropTypes.object.isRequired,
+        location: PropTypes.object.isRequired,
+        history: PropTypes.object.isRequired
+    };
 
     constructor(props) {
         super(props);
@@ -20,27 +28,49 @@ class PageHeader extends Component {
                 userid: '',
                 password: '',
                 loginEnabled: false
+            },
+            auth: {
+
             }
         };
+
+        store.subscribe(() => {
+            let state = this.state;
+            this.setState({
+                ...state,
+                auth: {
+                    jwt: store.getState().auth.jwt
+                }
+            });
+        });
+
     }
 
     render() {
         let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
+        let adminMenu = this.isAuthenticated() 
+            ? (<NavDropdown title="Admin" id="admin-nav-dropdown">
+                    <NavDropdown.Item onClick={() => this.logoutAdmin()}>Logout</NavDropdown.Item>
+                </NavDropdown>) 
+            : (<Nav.Link onClick={() => {
+                this.showLoginModal()
+            }}>Admin</Nav.Link>);
 
         return [
             <header className="pb-3 mb-2" key="page-header-header">
                 <img className="img-fluid" src="./images/wiscon_header.jpg" style={{width: "100%" }} alt="The WisCon Conference"/>
                 <Navbar bg="dark" expand="lg" className="navbar-dark navbar-expand-md justify-content-between">
                     <Nav className="navbar-expand-md navbar-dark bg-dark ">
-                        <Nav.Link href="https://wiscon.net">WisCon Home</Nav.Link>
-                        <Nav.Link href="https://wiscon.net">Find My Registration</Nav.Link>
+                        <Nav.Link onClick={() => this.goToHome()}>Home</Nav.Link>
+                        <Nav.Link onClick={() => this.goToFindMyRegistration()}>Find My Registration</Nav.Link>
+                        <Nav.Link href="https://wiscon.net" target="_blank" rel="noreferrer">WisCon</Nav.Link>
                     </Nav>
                     <Nav className="navbar-expand-md navbar-dark bg-dark ">
-                        <Nav.Link onClick={() => this.showLoginModal()}>Admin</Nav.Link>
+                        {adminMenu}
                     </Nav>
                 </Navbar>
             </header>,
-            <Modal show={this.state.showModal}  onHide={() => this.handleClose()} key="page-header-login-dialog">
+            <Modal show={this.state.login.showModal}  onHide={() => this.handleClose()} key="page-header-login-dialog">
                 <Form>
                     <Modal.Header closeButton>
                     <Modal.Title>Login</Modal.Title>
@@ -64,6 +94,16 @@ class PageHeader extends Component {
                 </Form>
             </Modal>
         ]
+    }
+
+    goToHome() {
+        const { history } = this.props;
+        history.push('/');
+    }
+
+    goToFindMyRegistration() {
+        const { history } = this.props;
+        history.push('/find');
     }
 
     setUserid(userid) {
@@ -126,17 +166,15 @@ class PageHeader extends Component {
 
     processLogin() {
         axios.post('https://wisconregtest.bcholmes.org/api/authenticate.php', {
-            userid: this.state.userid,
-            password: this.state.password
+            userid: this.state.login.userid,
+            password: this.state.login.password
         })
         .then(res => {
             let jwt = this.extractJwt(res);
             if (jwt) {
                 store.dispatch(addAuthCredential(jwt));
             }
-            this.setState({
-                showModal: false
-            });
+            this.handleClose();
         })
         .catch(error => {
             let state = this.state;
@@ -162,6 +200,14 @@ class PageHeader extends Component {
             return undefined;
         }
     }
+
+    isAuthenticated() {
+        return this.state.auth.jwt;
+    }
+
+    logoutAdmin() {
+        store.dispatch(logout());
+    }
 }
 
-export default PageHeader;
+export default withRouter(PageHeader);

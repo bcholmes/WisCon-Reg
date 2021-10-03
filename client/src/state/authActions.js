@@ -1,5 +1,6 @@
 
 export const ADD_AUTH_CREDENTIAL = 'ADD_AUTH_CREDENTIAL';
+export const LOGOUT = 'LOGOUT';
 
 export function addAuthCredential(jwt) {
    let payload = {
@@ -10,3 +11,9 @@ export function addAuthCredential(jwt) {
       payload
    }
 }
+export function logout() {
+    return {
+       type: LOGOUT
+    }
+ }
+ 
