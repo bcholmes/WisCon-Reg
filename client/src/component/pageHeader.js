@@ -29,9 +29,7 @@ class PageHeader extends Component {
                 password: '',
                 loginEnabled: false
             },
-            auth: {
-
-            }
+            auth: store.getState().auth
         };
 
         store.subscribe(() => {
@@ -50,6 +48,7 @@ class PageHeader extends Component {
         let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
         let adminMenu = this.isAuthenticated() 
             ? (<NavDropdown title="Admin" id="admin-nav-dropdown">
+                    <NavDropdown.Item onClick={() => this.goToRegistrationList()}>Registrations</NavDropdown.Item>
                     <NavDropdown.Item onClick={() => this.logoutAdmin()}>Logout</NavDropdown.Item>
                 </NavDropdown>) 
             : (<Nav.Link onClick={() => {
@@ -104,6 +103,11 @@ class PageHeader extends Component {
     goToFindMyRegistration() {
         const { history } = this.props;
         history.push('/find');
+    }
+
+    goToRegistrationList() {
+        const { history } = this.props;
+        history.push('/admin');
     }
 
     setUserid(userid) {
@@ -165,6 +169,8 @@ class PageHeader extends Component {
     }
 
     processLogin() {
+        const { history } = this.props;
+
         axios.post('https://wisconregtest.bcholmes.org/api/authenticate.php', {
             userid: this.state.login.userid,
             password: this.state.login.password
@@ -175,6 +181,7 @@ class PageHeader extends Component {
                 store.dispatch(addAuthCredential(jwt));
             }
             this.handleClose();
+            this.goToRegistrationList();
         })
         .catch(error => {
             let state = this.state;
