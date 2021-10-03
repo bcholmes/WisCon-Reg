@@ -21,18 +21,15 @@ function resolve_login($userid, $password, $db_ini) {
     } else {
         $query = <<<EOD
  SELECT 
-        P.password, P.data_retention, P.badgeid, C.firstname, C.lastname, C.badgename 
+        password, badgeid, firstname, lastname, badgename 
    FROM 
-        Participants P 
-   JOIN CongoDump C USING (badgeid)
+        reg_users 
   WHERE 
-         P.badgeid = ?
-      OR 
-         C.email = ?;
+         email = ?;
  EOD;
 
         $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "ss", $userid, $userid);
+        mysqli_stmt_bind_param($stmt, "s", $userid);
         if (mysqli_stmt_execute($stmt)) {
             $result = mysqli_stmt_get_result($stmt);
             if (mysqli_num_rows($result) == 1) {
