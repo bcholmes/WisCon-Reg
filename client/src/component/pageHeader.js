@@ -6,6 +6,8 @@ import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/esm/Modal';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
+import { addAuthCredential } from '../state/authActions';
+import store from '../state/store';
 
 class PageHeader extends Component {
 
@@ -13,14 +15,18 @@ class PageHeader extends Component {
         super(props);
 
         this.state = {
-            showModal: false,
-            userid: '',
-            password: '',
-            loginEnabled: false
+            login: {
+                showModal: false,
+                userid: '',
+                password: '',
+                loginEnabled: false
+            }
         };
     }
 
     render() {
+        let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
+
         return [
             <header className="pb-3 mb-2" key="page-header-header">
                 <img className="img-fluid" src="./images/wiscon_header.jpg" style={{width: "100%" }} alt="The WisCon Conference"/>
@@ -40,6 +46,7 @@ class PageHeader extends Component {
                     <Modal.Title>Login</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
+                        {message}
                         <Form.Group className="mb-3" controlId="formEmail">
                             <Form.Label className="sr-only">Email</Form.Label>
                             <Form.Control type="email" placeholder="Enter email" value={this.state.userid} onChange={(e) => this.setUserid(e.target.value)}/>
@@ -50,7 +57,7 @@ class PageHeader extends Component {
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="primary" onClick={() => this.processLogin()} disabled={!this.state.loginEnabled}>
+                        <Button variant="primary" onClick={() => this.processLogin()} disabled={!this.state.login.loginEnabled}>
                             Login
                         </Button>
                     </Modal.Footer>
@@ -61,43 +68,59 @@ class PageHeader extends Component {
 
     setUserid(userid) {
         let state = this.state;
-        let enabled = state.loginEnabled;
-        if (userid && this.state.password) {
+        let enabled = state.login.loginEnabled;
+        if (userid && this.state.login.password) {
             enabled = true;
         } else {
             enabled = false;
         }
         this.setState({
             ...state,
-            userid: userid,
-            loginEnabled: enabled
+            login: {
+                ...state.login,
+                userid: userid,
+                loginEnabled: enabled,
+                message: undefined
+            }
         });
     }
 
     setPassword(value) {
         let state = this.state;
-        let enabled = state.loginEnabled;
-        if (this.state.userid && value) {
+        let enabled = state.login.loginEnabled;
+        if (this.state.login.userid && value) {
             enabled = true;
         } else {
             enabled = false;
         }
         this.setState({
             ...state,
-            password: value,
-            loginEnabled: enabled
+            login: {
+                ...state.login,
+                password: value,
+                loginEnabled: enabled,
+                message: undefined
+            }
         });
     }
 
     handleClose() {
+        let state = this.state;
         this.setState({
-            showModal: false
+            ...state, 
+            login: {
+                showModal: false
+            }
         });
     }
 
     showLoginModal() {
+        let state = this.state;
         this.setState({
-            showModal: true
+            ...state, 
+            login: {
+                showModal: true
+            }
         });
     }
 
@@ -106,12 +129,38 @@ class PageHeader extends Component {
             userid: this.state.userid,
             password: this.state.password
         })
-            .then(function (response) {
-
-            })
-            .catch(function (error) {
-                console.log(error);
+        .then(res => {
+            let jwt = this.extractJwt(res);
+            if (jwt) {
+                store.dispatch(addAuthCredential(jwt));
+            }
+            this.setState({
+                showModal: false
             });
+        })
+        .catch(error => {
+            let state = this.state;
+            let message = "There was a technical problem trying to log you in. Try again later."
+            if (error.response && error.response.status === 401) {
+                message = "There was a problem with your userid and/or password."
+            }
+            this.setState({
+                ...state,
+                login: {
+                    ...state.login,
+                    message: message
+                }
+            })
+        });
+    }
+
+    extractJwt(res) {
+        let authHeader = res.headers['authorization'];
+        if (authHeader.indexOf('Bearer ') === 0) {
+            return authHeader.substring('Bearer '.length);
+        } else {
+            return undefined;
+        }
     }
 }
 

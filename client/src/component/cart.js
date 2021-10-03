@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import store from '../state/cartReducer'
+import store from '../state/store'
 
 class Cart extends Component {
 
@@ -7,12 +7,12 @@ class Cart extends Component {
         super(props);
 
         this.state = {
-            cart: store.getState().cart
+            cart: store.getState().cart.items
         }
 
         store.subscribe(() => {
             this.setState({
-                cart: store.getState().cart
+                cart: store.getState().cart.items
             });
         });
     }

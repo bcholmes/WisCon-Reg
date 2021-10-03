@@ -3,7 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/esm/Modal';
 import { addToCart } from '../state/cartActions';
-import store from '../state/cartReducer';
+import store from '../state/store';
 
 class OfferingList extends Component {
 

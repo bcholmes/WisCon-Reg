@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Button from 'react-bootstrap/Button';
-import store from '../state/cartReducer'
+import store from '../state/store'
 
 class CheckoutButton extends Component {
 
@@ -8,12 +8,12 @@ class CheckoutButton extends Component {
         super(props);
 
         this.state = {
-            enabled: store.getState().cart.length > 0
+            enabled: store.getState().cart.items.length > 0
         }
 
         store.subscribe(() => {
             this.setState({
-                enabled: store.getState().cart.length > 0
+                enabled: store.getState().cart.items.length > 0
             });
         });
     }
