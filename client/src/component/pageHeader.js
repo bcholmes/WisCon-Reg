@@ -86,6 +86,7 @@ class PageHeader extends Component {
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
+                        <a href="https://wiscontest.bcholmes.org/ForgotPassword.php" className="btn btn-link" target="_blank" rel="noreferrer">Reset password</a>
                         <Button variant="primary" onClick={() => this.processLogin()} disabled={!this.state.login.loginEnabled}>
                             Login
                         </Button>
@@ -169,8 +170,6 @@ class PageHeader extends Component {
     }
 
     processLogin() {
-        const { history } = this.props;
-
         axios.post('https://wisconregtest.bcholmes.org/api/authenticate.php', {
             userid: this.state.login.userid,
             password: this.state.login.password

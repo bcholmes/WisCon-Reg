@@ -2,15 +2,9 @@ import React, { Component } from 'react';
 
 import Container from 'react-bootstrap/Container';
 import PageHeader from '../component/pageHeader';
-import Form from 'react-bootstrap/Form'
-import Button from 'react-bootstrap/Button'
 import Cart from '../component/cart'
 
 class CheckoutPage extends Component {
-
-    constructor(props) {
-        super(props);
-    }
 
     render() {
         return (
