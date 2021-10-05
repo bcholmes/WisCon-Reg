@@ -2,9 +2,10 @@
 // Copyright (c) 2021 BC Holmes. All rights reserved. See copyright document for more details.
 // This function provides support for login.
 
-$db_ini = parse_ini_file(__DIR__ . "/../../reg_new_conf.ini", true);
-
+require_once("config.php");
 require_once("jwt_functions.php");
+
+$db_ini = read_ini();
 
 function get_name($dbobject) {
     if (isset($dbobject->badgename) && $dbobject->badgename !== '') {

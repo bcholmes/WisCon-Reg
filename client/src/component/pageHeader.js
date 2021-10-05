@@ -47,7 +47,7 @@ class PageHeader extends Component {
     render() {
         let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
         let adminMenu = this.isAuthenticated() 
-            ? (<NavDropdown title="Admin" id="admin-nav-dropdown">
+            ? (<NavDropdown title={this.getAdminName()} id="admin-nav-dropdown">
                     <NavDropdown.Item onClick={() => this.goToRegistrationList()}>Registrations</NavDropdown.Item>
                     <NavDropdown.Item onClick={() => this.logoutAdmin()}>Logout</NavDropdown.Item>
                 </NavDropdown>) 
@@ -94,6 +94,21 @@ class PageHeader extends Component {
                 </Form>
             </Modal>
         ]
+    }
+
+    getAdminName() {
+        if (this.isAuthenticated()) {
+            let jwt = this.state.auth.jwt;
+            let parts = jwt.split('.');
+            if (parts.length == 3){
+                let payload = JSON.parse(atob(parts[1]));
+                return payload['name'] || "Admin";
+            } else {
+                return "Admin";
+            }
+        } else {
+            return undefined;
+        }
     }
 
     goToHome() {

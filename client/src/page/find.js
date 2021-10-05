@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 
 import Container from 'react-bootstrap/Container';
 import PageHeader from '../component/pageHeader';
@@ -6,36 +7,47 @@ import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
 
-class Find extends Component {
+class FindMyRegistrationPage extends Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            showWaiver: false
+            email: '',
+            submitEnabled: false
         }
     }
 
     render() {
+        let message = undefined;
+        if (this.state.message) {
+            if (this.state.message.type === 'success') {
+                message = (<div className="alert alert-success">{this.state.message.text}</div>);
+            } else {
+                message = (<div className="alert alert-danger">{this.state.message.text}</div>);
+            }
+        }
+
         return (
             <Container className="mx-auto">
                 <PageHeader />
                 <Card>
                     <Card.Header><h4>Find My Registration</h4></Card.Header>
                     <Card.Body>
+                        {message}
                         <p>Provide the email address that you used to register, and we'll send you an email with a link to your registration details.</p>
                         <div className="row mt-4">
 
                             <Form className="col-md-5">
                                 <Form.Group controlId="formBasicEmail">
                                     <Form.Label className="sr-only">Email address</Form.Label>
-                                    <Form.Control type="email" placeholder="Email" />
+                                    <Form.Control type="email" placeholder="Email" value={this.state.email} onChange={(e) => this.setEmail(e.target.value)}/>
                                     <Form.Text className="text-muted">
-                                        We'll never share your email with anyone outside of WisCon. We're not savages.
+                                        We'll never share your email with anyone outside of WisCon. We're not cads.
                                     </Form.Text>
                                 </Form.Group>
 
                                 <div className="text-center">
-                                    <Button variant="primary" onClick={() => this.submitFindMyRegistration()}>
+                                    <Button variant="primary" onClick={() => this.submitFindMyRegistration()} disabled={!this.state.submitEnabled}>
                                         Email me
                                     </Button>
                                 </div>
@@ -47,9 +59,46 @@ class Find extends Component {
         );
     }
 
+    setEmail(email) {
+        this.setState({
+            email: email,
+            submitEnabled: this.isValidEmail(email),
+            message: undefined
+        })
+    }
+
+    isValidEmail(email) {
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
+
     submitFindMyRegistration() {
-        
+        axios.post('https://wisconregtest.bcholmes.org/api/findRegistration.php', {
+            email: this.state.email
+        })
+        .then(res => {
+            let state = this.state;
+            let message = "You should receive an email shortly."
+            this.setState({
+                ...state,
+                message: {
+                    text: message,
+                    type: "success"
+                }
+            })
+        })
+        .catch(error => {
+            let state = this.state;
+            let message = "We had a problem trying to connect to the server."
+            this.setState({
+                ...state,
+                message: {
+                    text: message,
+                    type: "danger"
+                }
+            })
+        });
     }
 }
 
-export default Find;
+export default FindMyRegistrationPage;
