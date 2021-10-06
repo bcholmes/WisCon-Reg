@@ -14,3 +14,5 @@ The Online Registration application client component is created as a React app u
 Here are some screenshots of the application.
 
 ![Main Screen](../etc/screenshots/wiscon_online_reg.png)
+
+![Add Item Screen](../etc/screenshots/add_item_screen.png)

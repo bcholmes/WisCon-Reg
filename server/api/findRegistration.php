@@ -4,10 +4,33 @@
 
 require_once("config.php");
 require_once("db_common_functions.php");
+require_once("email_functions.php");
 
 $ini = read_ini();
 
 $conData = find_current_con($ini);
+
+function create_not_found_email($email_address, $con_name) {
+    $emailBody = <<<EOD
+    <p>
+        Hello $email_address,
+    </p>
+    <p>
+        Someone -- hopefully you -- was trying to look up your registration for the upcoming
+        <b>$con_name</b> event. 
+    </p>
+    <p>
+        Sadly, we cannot find a registration under that email address. Please reach out to 
+        Registration if you need assistance.
+    </p>
+    <p>
+        Thanks,<br />
+        The System That Sends the Emails
+    </p>
+    EOD;
+    return $emailBody;
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -18,6 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $email = $data->email;
         if ($email) {
+            $subject = "" . $conData->name . " Registration Lookup Request";
+            send_email(create_not_found_email($email, $conData->name), $subject, 
+                $email);
+
             http_response_code(201);
         } else {
             http_response_code(400);
