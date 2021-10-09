@@ -30,6 +30,7 @@ entity reg_perennial_con_info {
 entity reg_offering {
 * id : INT <<auto_increment>>
 --
+* sort_order: INT
 * name : varchar(90)
 * con_id : INT
 * start_time : TIMESTAMP
@@ -37,7 +38,17 @@ entity reg_offering {
   minimum_price : numeric(13,2)
 * suggested_price : numeric(13,2)
   maximum_price : numeric(13,2)
-* quantity_available : int
+* description: varchar(1024),
+* is_membership: char(1),
+* add_prompts: char(1),
+* email_required: varchar(16)
+}
+
+entity reg_offering_highlight {
+* offering_id: INT
+* sort_order: INT
+--
+* highlight_text: varchar(1024)
 }
 
 entity reg_order {
@@ -50,6 +61,9 @@ entity reg_order_item {
 --
 * order_id : INT
 * offering_id : INT
+* amount: numeric(13,2)
+* name: varchar(255)
+* email: varchar(255)
 }
 
 entity reg_admin_user {
@@ -59,9 +73,10 @@ entity reg_admin_user {
 * password : varchar(255)
 }
 
-reg_con_info }|--|| reg_perennial_con_info : perennial_con_id
-reg_order ||--o{ reg_order_item : order_id
+reg_con_info }|-right-|| reg_perennial_con_info : perennial_con_id
+reg_order ||-left-o{ reg_order_item : order_id
 reg_order_item }o--|| reg_offering : offering_id
 reg_offering }|--|| reg_con_info : con_id
+reg_offering ||-right-o{ reg_offering_highlight : offering_id
 
 @enduml

@@ -1,6 +1,6 @@
 import React from 'react';
 import Home from './page/home'
-import FindMyRegistrationPage from './page/find';
+import FindMyRegistrationPage from './page/findMyRegistrationPage';
 import RegistrationsPage from './page/registrationsPage';
 import CheckoutPage from './page/checkoutPage';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'

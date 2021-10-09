@@ -2,10 +2,12 @@ import React, { Component } from 'react';
 import axios from 'axios';
 
 import Container from 'react-bootstrap/Container';
-import PageHeader from '../component/pageHeader';
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
+
+import Footer from '../component/footer';
+import PageHeader from '../component/pageHeader';
 
 class FindMyRegistrationPage extends Component {
 
@@ -55,6 +57,7 @@ class FindMyRegistrationPage extends Component {
                         </div>
                     </Card.Body>
                 </Card>
+                <Footer />
             </Container>
         );
     }

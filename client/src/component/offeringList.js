@@ -7,107 +7,17 @@ import store from '../state/store';
 
 class OfferingList extends Component {
 
-    offerings = [
-        {
-            id: 1,
-            title: "Former GoH",
-            currency: "USD",
-            suggestedPrice: 0,
-            emphasis: false,
-            highlights: [ "Available to previous Guests of Honor" ],
-            description: "Available only to previous Guests of Honor.",
-            emailRequired: true
-        },
-        {
-            id: 2,
-            title: "Adult Membership",
-            currency: "USD",
-            suggestedPrice: 65.00,
-            emphasis: true,
-            highlights: [ "Full Weekend (Thu-Mon)", "Ages 19+" ],
-            description: "Our standard membership for adult guests (anyone 19 or older as of 2022-05-30/Memorial Day, last day of the convention).",
-            emailRequired: true
-        },
-        {
-            id: 3,
-            title: "Teen Membership",
-            currency: "USD",
-            suggestedPrice: 20.00,
-            emphasis: false,
-            highlights: [ "Full Weekend (Thu-Mon)", "Ages 13-18" ],
-            description: "Our weekend membership for teen guests (anyone 13 to 18 as of 2022-05-30/Memorial Day, last day of the convention).",
-            emailRequired: false
-        },
-        {
-            id: 4,
-            title: "Youth Membership",
-            currency: "USD",
-            suggestedPrice: 20.00,
-            emphasis: false,
-            highlights: [ "Full Weekend (Thu-Mon)", "Ages 7-12" ],
-            description: "Our weekend membership for young guests (anyone 7 to 12 as of 2022-05-30/Memorial Day, last day of the convention).",
-            emailRequired: false
-        },
-        {
-            id: 5,
-            title: "Wiscon Child Care",
-            currency: "USD",
-            suggestedPrice: 0.00,
-            emphasis: false,
-            highlights: [ "On-site daytime child care by licensed providers (Thu-Mon)", "Ages 0-6" ],
-            description: "Child Membership (Ages 0–6) for WisCon 45 in May 2022. Includes on-site child care by licensed providers during the day, on each day of the convention (check wiscon.net for details and hours).",
-            emailRequired: false
-        },
-        {
-            id: 6,
-            title: "Supporting Membership",
-            currency: "USD",
-            suggestedPrice: 25.00,
-            emphasis: false,
-            highlights: [ "A non-attending membership", "Receive printed materials, by mail" ],
-            description: "A non-attending membership for the convention. Supporting Members will receive any announcements and mailings sent to the general membership, as well as a physical copy of our program and souvenir book (requires a mailing address).",
-            emailRequired: true
-        },
-        {
-            id: 7,
-            title: "Dessert Ticket",
-            currency: "USD",
-            suggestedPrice: 35.00,
-            emphasis: false,
-            highlights: [ "Sunday Evening Dessert Salon", "Two desserts" ],
-            description: "Ticket for the Dessert Salon on Sunday evening of WisCon 45 in 2020, including two desserts from the buffet. (Proceeds from the Dessert Salon help to offset the costs of other aspects of the convention.)",
-            emailRequired: true
-        },
-        {
-            id: 8,
-            title: "Donate to Wiscon/SF3",
-            currency: "USD",
-            suggestedPrice: undefined,
-            emphasis: false,
-            highlights: [ "Donations to the general fund for SF3, WisCon's parent organization." ],
-            emailRequired: true
-        },
-        {
-            id: 9,
-            title: "Donate to WMAF",
-            currency: "USD",
-            suggestedPrice: undefined,
-            emphasis: false,
-            highlights: [ "The WisCon Member Assistance Fund supports anyone who needs financial assistance to attend" ],
-            emailRequired: true
-        }
-    ]
-
     constructor(props) {
         super(props);
 
         this.state = {
-            showModal: false
+            showModal: false,
+            offerings: store.getState().offerings
         }
     }
 
     render() {
-        let offeringList = this.offerings.map((o) => {
+        let offeringList = this.state.offerings.map((o) => {
             let highlights = o.highlights.map((h, i) => {
                 return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
             })
@@ -156,9 +66,23 @@ class OfferingList extends Component {
         let emailOptional = (this.state.selectedOffering && this.state.selectedOffering.emailRequired) ? undefined : (
             <Form.Check className="mb-4" id="noEmail" label="Don't have an email address" />);
 
+        let questions = (this.state.selectedOffering && this.state.selectedOffering.additionalQuestions) 
+            ? [
+                <Form.Check className="mb-3" id="volunteer" 
+                        label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />,
+                <Form.Check id="newsletter" 
+                        label="Would you like to subscribe by email to the WisCon / SF3 Newsletter, with updates about future WisCons and other SF3 events and activities?" />,
+                <Form.Text className="text-muted mb-3 ml-4">
+                        See more information <a href="https://wiscon.net/news/e-newsletter/" target="_blank" rel="noreferrer">here</a>
+                </Form.Text>,
+                <Form.Check className="mb-3" id="snailMail" 
+                        label="Would you like to receive annual reminder postcards by physical mail? (Requires a mailing address)" />
+            ]
+            : undefined;
+
         return (
             <div>
-                <p>Select your membership type.</p>
+                <p>Select from the following memberships or other options.</p>
                 <div className="row row-cols-1 row-cols-md-3 mb-3 text-center">
                     {offeringList}
                 </div>
@@ -189,15 +113,7 @@ class OfferingList extends Component {
                             </Form.Group>
                             {emailOptional}
 
-                            <Form.Check className="mb-3" id="volunteer" 
-                                label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />
-                            <Form.Check id="newsletter" 
-                                label="Would you like to subscribe by email to the WisCon / SF3 Newsletter, with updates about future WisCons and other SF3 events and activities?" />
-                            <Form.Text className="text-muted mb-3 ml-4">
-                                See more information <a href="https://wiscon.net/news/e-newsletter/" target="_blank" rel="noreferrer">here</a>
-                            </Form.Text>
-                            <Form.Check className="mb-3" id="snailMail" 
-                                label="Would you like to receive annual reminder postcards by physical mail? (Requires a mailing address)" />
+                            {questions}
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="primary">

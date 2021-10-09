@@ -2,11 +2,13 @@ import React, { Component } from 'react';
 import axios from 'axios';
 
 import Container from 'react-bootstrap/Container';
-import PageHeader from '../component/pageHeader';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import download from 'downloadjs';
+
+import Footer from '../component/footer';
+import PageHeader from '../component/pageHeader';
 
 class RegistrationsPage extends Component {
 
@@ -24,7 +26,7 @@ class RegistrationsPage extends Component {
         this.loadData();
     }
     render() {
-        let spinner = this.state.loading ? (<Spinner animation="border" />) : undefined;
+        let spinner = this.state.loading ? (<div className="text-center"><Spinner animation="border" /></div>) : undefined;
         let message = (this.state.message) ? (<div className="alert alert-danger">{this.state.message}</div>) : undefined;
 
         return (
@@ -58,6 +60,7 @@ class RegistrationsPage extends Component {
                     </thead>
                 </table>
                 {spinner}
+                <Footer />
             </Container>
         );
     }
