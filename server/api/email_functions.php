@@ -13,6 +13,10 @@ function send_email($body, $subject, $to, $cc = null) {
     //Define from address
     $message->setFrom([ $ini['email']['from_email'] => $ini['email']['from_name'] ] );
 
+    if ($ini['email']['reg_email'] && $ini['email']['reg_name']) {
+        $message->setReplyTo([ $ini['email']['reg_email'] => $ini['email']['reg_name'] ] );
+    }
+
     $ok = true;
     try {
         $message->addTo($to);

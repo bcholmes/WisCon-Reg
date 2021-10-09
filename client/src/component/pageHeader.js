@@ -32,7 +32,7 @@ class PageHeader extends Component {
             auth: store.getState().auth
         };
 
-        store.subscribe(() => {
+        this.unsubscribe = store.subscribe(() => {
             let state = this.state;
             this.setState({
                 ...state,
@@ -96,11 +96,17 @@ class PageHeader extends Component {
         ]
     }
 
+    componentWillUnmount() {
+        if (this.unsubscribe) {
+            this.unsubscribe();
+        }
+    }
+
     getAdminName() {
         if (this.isAuthenticated()) {
             let jwt = this.state.auth.jwt;
             let parts = jwt.split('.');
-            if (parts.length == 3){
+            if (parts.length === 3) {
                 let payload = JSON.parse(atob(parts[1]));
                 return payload['name'] || "Admin";
             } else {
@@ -198,6 +204,7 @@ class PageHeader extends Component {
             this.goToRegistrationList();
         })
         .catch(error => {
+            console.log(error);
             let state = this.state;
             let message = "There was a technical problem trying to log you in. Try again later."
             if (error.response && error.response.status === 401) {

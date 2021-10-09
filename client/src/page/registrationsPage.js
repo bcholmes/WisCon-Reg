@@ -6,6 +6,7 @@ import PageHeader from '../component/pageHeader';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
+import download from 'downloadjs';
 
 class RegistrationsPage extends Component {
 
@@ -17,10 +18,11 @@ class RegistrationsPage extends Component {
             },
             loading: false
         }
-
-        this.loadData();
     }
 
+    componentDidMount() {
+        this.loadData();
+    }
     render() {
         let spinner = this.state.loading ? (<Spinner animation="border" />) : undefined;
         let message = (this.state.message) ? (<div className="alert alert-danger">{this.state.message}</div>) : undefined;
@@ -40,7 +42,7 @@ class RegistrationsPage extends Component {
 
                     </div>
                     <div className="col-md-6 text-right">
-                        <Button variant="secondary">Download</Button>
+                        <Button variant="secondary" onClick={() => this.downloadReport()}>Download</Button>
                     </div>
                 </div>
                 <table className="table">
@@ -60,6 +62,45 @@ class RegistrationsPage extends Component {
         );
     }
 
+    async downloadReport() {
+
+        axios.get('https://wisconregtest.bcholmes.org/api/download_report.php')
+            .then(res => {
+
+                let fileName = "report.csv";
+                let disposition = res.headers['content-disposition'];
+                if (disposition) {
+                    let fileNameIndex = disposition.indexOf("filename=");
+                    if (fileNameIndex >= 0) {
+                        fileName = disposition.substr(fileNameIndex + "filename=".length);
+
+                        if (fileName.indexOf(';') >= 0) {
+                            fileName = fileName.substr(0, fileName.indexOf(';'));
+                        }
+                    }
+                }
+                let type = "text/csv";
+                let contentType = res.headers['content-type'];
+                if (contentType) {
+                    type = contentType;
+                    if (type.indexOf(';') >= 0) {
+                        type = type.substr(0, type.indexOf(';'));
+                    }
+                }
+                download(res.data, fileName, type);
+
+            })
+            .catch(error => {
+                let state = this.state;
+                let message = "The registration list could not be downloaded."
+                this.setState({
+                    ...state,
+                    loading: false,
+                    message: message
+                })
+            });
+    }
+
     loadData() {
         let state = this.state;
         this.setState({
@@ -67,7 +108,7 @@ class RegistrationsPage extends Component {
             loading: true
         });
 
-        axios.get('https://wisconregtest.bcholmes.org/api/registration-list.php')
+        axios.get('https://wisconregtest.bcholmes.org/api/registration_list.php')
         .then(res => {
             let state = this.state;
             this.setState({

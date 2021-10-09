@@ -10,18 +10,19 @@ $ini = read_ini();
 
 $conData = find_current_con($ini);
 
-function create_not_found_email($email_address, $con_name) {
+function create_not_found_email($email_address, $con_name, $ini) {
+    $reg_email = $ini['email']['reg_email'];
     $emailBody = <<<EOD
     <p>
         Hello $email_address,
     </p>
     <p>
-        Someone -- hopefully you -- was trying to look up your registration for the upcoming
-        <b>$con_name</b> event. 
+        Someone &mdash; hopefully you &mdash; was trying to look up your registration for 
+        <b>$con_name</b>.
     </p>
     <p>
         Sadly, we cannot find a registration under that email address. Please reach out to 
-        Registration if you need assistance.
+        <a href="mailto:$reg_email">Registration</a> if you need assistance.
     </p>
     <p>
         Thanks,<br />
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = $data->email;
         if ($email) {
             $subject = "" . $conData->name . " Registration Lookup Request";
-            send_email(create_not_found_email($email, $conData->name), $subject, 
+            send_email(create_not_found_email($email, $conData->name, $ini), $subject, 
                 $email);
 
             http_response_code(201);
