@@ -29,6 +29,7 @@ function resolve_login($userid, $password, $db_ini) {
          email = ?;
  EOD;
 
+        mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "s", $userid);
         if (mysqli_stmt_execute($stmt)) {

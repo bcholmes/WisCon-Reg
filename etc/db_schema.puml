@@ -31,7 +31,7 @@ entity reg_offering {
 * id : INT <<auto_increment>>
 --
 * sort_order: INT
-* name : varchar(90)
+* title : varchar(90)
 * con_id : INT
 * start_time : TIMESTAMP
 * end_time : TIMESTAMP
@@ -41,6 +41,7 @@ entity reg_offering {
 * description: varchar(1024),
 * is_membership: char(1),
 * add_prompts: char(1),
+* emphasis: char(1),
 * email_required: varchar(16)
 }
 

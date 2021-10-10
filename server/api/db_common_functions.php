@@ -9,7 +9,7 @@ function find_current_con($db_ini) {
     } else {
         $query = <<<EOD
  SELECT 
-        c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
+        c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
    FROM 
         reg_con_info c, reg_perennial_con_info p
   WHERE 
@@ -19,6 +19,7 @@ function find_current_con($db_ini) {
 
  EOD;
 
+        mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
         if (mysqli_stmt_execute($stmt)) {
             $result = mysqli_stmt_get_result($stmt);

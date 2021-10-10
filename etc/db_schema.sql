@@ -31,6 +31,7 @@ create table reg_offering (
     minimum_price decimal(13,2),
     suggested_price decimal(13,2),
     maximum_price decimal(13,2),
+    currency char(3) NOT NULL DEFAULT 'USD',
     emphasis char(1) NOT NULL DEFAULT 'N',
     is_membership char(1) NOT NULL DEFAULT 'N',
     add_prompts char(1) NOT NULL DEFAULT 'N',
@@ -102,6 +103,84 @@ insert into reg_offering_highlight
 (offering_id, sort_order, highlight_text)
 select max(id),
 2, 'Ages 19+'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(3, 'Teen Membership', 1, '2022-05-31 23:59:59', 20.00, 
+'Our weekend membership for teen guests (anyone 13 to 18 as of 2022-05-30/Memorial Day, last day of the convention).', 
+'Y', 'Y', 'OPTIONAL');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Full Weekend (Thu-Mon)'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 13-18'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(4, 'Youth Membership', 1, '2022-05-31 23:59:59', 20.00, 
+'Our weekend membership for young guests (anyone 7 to 12 as of 2022-05-30/Memorial Day, last day of the convention).', 
+'Y', 'Y', 'OPTIONAL');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Full Weekend (Thu-Mon)'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 7-12'
+from reg_offering;
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(5, 'Wiscon Child Care', 1, '2022-05-31 23:59:59', 20.00, 
+'Child Membership (Ages 0-6) for WisCon 45 in May 2022. Includes on-site child care by licensed providers during the day, on each day of the convention (check wiscon.net for details and hours).', 
+'Y', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'On-site daytime child care by licensed providers (Thu-Mon)'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 0-6'
+from reg_offering;
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(6, 'Supporting Membership', 1, '2022-05-31 23:59:59', 25.00, 
+'A non-attending membership for the convention. Supporting Members will receive any announcements and mailings sent to the general membership, as well as a physical copy of our program and souvenir book (requires a mailing address).', 
+'Y', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'A non-attending membership'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Receive printed materials, by mail'
 from reg_offering;
 
 
