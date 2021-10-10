@@ -65,7 +65,7 @@ class OfferingList extends Component {
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
-                                <Button size="lg" className="w-100" onClick={()  => this.addItem(o) }>Add to Cart</Button>
+                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) }>Add to Cart</Button>
                             </div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@ class OfferingList extends Component {
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
-                                <Button size="lg" className="w-100" onClick={()  => this.addItem(o) } variant="outline-primary">Add to Cart</Button>
+                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) } variant="outline-primary">Add to Cart</Button>
                             </div>
                             </div>
                         </div>
@@ -93,26 +93,40 @@ class OfferingList extends Component {
             let title = this.state.selectedOffering ? this.state.selectedOffering.title : undefined;
             let description = this.state.selectedOffering ? (<p>{this.state.selectedOffering.description}</p>) : undefined;
 
-            let emailOptional = (this.state.selectedOffering && this.state.selectedOffering.emailRequired) ? undefined : (
-                <Form.Check className="mb-4" id="noEmail" label="Don't have an email address" />);
+            let message = this.state.message ? (<div className="alert alert-danger">{this.state.message}</div>) : undefined;
+            let emailOption =  (<Form.Group controlId="formEmail" key="email-field">
+                <Form.Label className="sr-only">Email</Form.Label>
+                <Form.Control type="email" placeholder="Email address" onChange={(e) => this.setFormValue("email", e.target.value)}/>
+                <Form.Text className="text-muted">
+                    Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
+                    sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
+                    signing up for WisCon programming, please provide the same email address here so that we can match your profiles.)
+                </Form.Text>
+            </Form.Group>);
+
+            if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'NO') {
+                emailOption = undefined;
+            } else if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'OPTIONAL') {
+                emailOption = [emailOption, <Form.Check className="mb-4" id="noEmail" label="Don't have an email address" key="no-email-check"/>]
+            }
 
             let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts) 
                 ? [
-                    <Form.Check className="mb-3" id="volunteer" 
+                    <Form.Check className="mb-3" id="volunteer" key="form-volunteer"
                             label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />,
-                    <Form.Check id="newsletter" 
+                    <Form.Check id="newsletter"  key="form-newsletter"
                             label="Would you like to subscribe by email to the WisCon / SF3 Newsletter, with updates about future WisCons and other SF3 events and activities?" />,
-                    <Form.Text className="text-muted mb-3 ml-4">
+                    <Form.Text className="text-muted mb-3 ml-4" key="form-newsletter-text">
                             See more information <a href="https://wiscon.net/news/e-newsletter/" target="_blank" rel="noreferrer">here</a>
                     </Form.Text>,
-                    <Form.Check className="mb-3" id="snailMail" 
+                    <Form.Check className="mb-3" id="snailMail" key="form-snailmail"
                             label="Would you like to receive annual reminder postcards by physical mail? (Requires a mailing address)" />
                 ]
                 : undefined;
 
             return (
                 <div>
-                    <p>Select from the following memberships or other options.</p>
+                    <p>Select from the following options.</p>
                     <div className="row row-cols-1 row-cols-md-3 mb-3 text-center">
                         {offeringList}
                     </div>
@@ -122,31 +136,23 @@ class OfferingList extends Component {
                                 <Modal.Title>{title}</Modal.Title>
                             </Modal.Header>
                             <Modal.Body>
+                                {message}
                                 {description}
                                 <Form.Group className="mb-3" controlId="formName">
                                     <Form.Label className="sr-only">Name</Form.Label>
-                                    <Form.Control type="text" placeholder="Name" />
+                                    <Form.Control type="text" placeholder="Name" value={this.getFormValue('name')} onChange={(e) => this.setFormValue("name", e.target.value)}/>
                                     <Form.Text className="text-muted">
                                         Please provide the full name of the person associated with this membership/item. 
                                         This name will appear on your badge, and does not need to be a wallet name.
                                     </Form.Text>
 
                                 </Form.Group>
-                                <Form.Group className="mb-3" controlId="formEmail">
-                                    <Form.Label className="sr-only">Email</Form.Label>
-                                    <Form.Control type="email" placeholder="Email address" />
-                                    <Form.Text className="text-muted">
-                                        Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
-                                        sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
-                                        signing up for WisCon programming, please provide the same email address here so that we can match your profiles.)
-                                    </Form.Text>
-                                </Form.Group>
-                                {emailOptional}
+                                {emailOption}
 
                                 {questions}
                             </Modal.Body>
                             <Modal.Footer>
-                                <Button variant="primary">
+                                <Button variant="primary" onClick={() => this.addItem()}>
                                     Add to Cart
                                 </Button>
                             </Modal.Footer>
@@ -157,15 +163,66 @@ class OfferingList extends Component {
         }
     }
 
-    addItem(offering) {
-        let price = offering.suggestedPrice || 0;
-//        store.dispatch(addToCart(offering, 'Bill Finger', 'bill@example.com', price));
+    getFormValue(formName) {
+        if (this.state.values) {
+            return this.state.values[formName] || '';
+        } else {
+            return '';
+        }
+    }
+
+    setFormValue(formName, formValue) {
+        let state = this.state;
+        let value = state.values;
+        let newValue = { ...value };
+        newValue[formName] = formValue;
+        this.setState({
+            ...state,
+            values: newValue,
+            message: null
+        });
+
+    }
+
+    showModal(offering) {
+        let value = {};
+        if (!offering.isMembership) {
+            let items = store.getState().cart.items;
+            if (items) {
+                let lastItem = items[items.length-1];
+                value['name'] = lastItem.for;
+            }
+        }
         this.setState({
             ...this.state,
             showModal: true,
-            selectedOffering: offering
+            selectedOffering: offering,
+            values: value,
+            message: null
         });
     }
+
+    addItem() {
+        let offering = this.state.selectedOffering;
+        let price = offering.suggestedPrice || 0;
+        let values = this.state.values;
+        if (values.name) {
+            store.dispatch(addToCart(offering, values.name, 'bill@example.com', price));
+            this.setState({
+                ...this.state,
+                showModal: false,
+                selectedOffering: null,
+                values: null,
+                message: null
+            });
+        } else {
+            this.setState({
+                ...this.state,
+                message: "Please provide a name."
+            });
+        }
+    }
+
 
     handleClose() {
         this.setState({

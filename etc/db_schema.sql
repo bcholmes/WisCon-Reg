@@ -147,7 +147,7 @@ from reg_offering;
 insert into reg_offering 
 (sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
 values
-(5, 'Wiscon Child Care', 1, '2022-05-31 23:59:59', 20.00, 
+(5, 'Wiscon Child Care', 1, '2022-05-31 23:59:59', 0.00, 
 'Child Membership (Ages 0-6) for WisCon 45 in May 2022. Includes on-site child care by licensed providers during the day, on each day of the convention (check wiscon.net for details and hours).', 
 'Y', 'N', 'NO');
 
@@ -183,6 +183,51 @@ select max(id),
 2, 'Receive printed materials, by mail'
 from reg_offering;
 
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(7, 'Dessert Ticket', 1, '2022-05-31 23:59:59', 35.00, 
+'Ticket for the Dessert Salon on Sunday evening of WisCon 45 in 2020, including two desserts from the buffet. (Proceeds from the Dessert Salon help to offset the costs of other aspects of the convention.)', 
+'N', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Sunday Evening Dessert Salon'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Two desserts'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, description, is_membership, add_prompts, email_required)
+values
+(8, 'Donate to Wiscon/SF3', 1, '2022-05-31 23:59:59',  
+'Thank you for supporting WisCon! Donations in this category will go to the general fund for SF3, WisCon''s parent organization, and will support the convention as well as other SF3 activities.', 
+'N', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Donations to the general fund for SF3, WisCon''s parent organization.'
+from reg_offering;
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, description, is_membership, add_prompts, email_required)
+values
+(9, 'Donate to WMAF', 1, '2022-05-31 23:59:59',  
+'Donations to the WisCon Member Assistance Fund, which supports anyone who needs financial assistance to attend the convention. To learn more, including about how to apply to the Member Assistance Fund yourself, visit https://wiscon.net/assistance-fund/ ', 
+'N', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'The WisCon Member Assistance Fund supports anyone who needs financial assistance to attend'
+from reg_offering;
 
 
 
