@@ -132,15 +132,15 @@ function mark_order_as_finalized($ini, $order_id, $payment_method, $email_addres
 }
 
 
-function create_order_item_with_uuid($ini, $conData, $orderId, $for, $offering, $item_uuid) {
+function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offering, $item_uuid) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
     } else {
         $query = <<<EOD
  INSERT
-        INTO reg_order_item (order_id, for_name, item_uuid, offering_id)
- SELECT ?, ?, ?, o.id
+        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, offering_id)
+ SELECT ?, ?, ?, ?, ?, o.id
    from reg_offering o
  where  o.id = ?
    and  o.con_id = ?;
@@ -148,7 +148,7 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $for, $offering, 
 
         mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "issii", $orderId, $for, $item_uuid, $offering->id, $conData->id);
+        mysqli_stmt_bind_param($stmt, "isssdii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, $offering->id, $conData->id);
 
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);

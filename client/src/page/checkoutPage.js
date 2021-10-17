@@ -7,12 +7,14 @@ import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 
 import Container from 'react-bootstrap/Container';
 import PageHeader from '../component/pageHeader';
 import Cart from '../component/cart';
 import Footer from '../component/footer';
 import { clearCart } from '../state/cartActions';
+import {  isValidEmail } from '../util/emailUtil';
 import store from '../state/store';
 
 class CheckoutPage extends Component {
@@ -102,35 +104,74 @@ class CheckoutPage extends Component {
                     </section>
                 </div>
                 <Footer />
+                <Modal show={this.state.showModal}  onHide={() => this.handleClose()} key="page-header-login-dialog">
+                    <Modal.Header closeButton>
+                    <Modal.Title>Order Checked Out!</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            Your order has been passed on to our finest registration volunteers. Each order is 
+                            lovingly processed through our registration workflow, which includes a light spritzing of 
+                            intersectional feminist energy, before eventually being converted into your very own
+                            WisCon membership.
+                        </p>
+                        <p>You should also shortly receive an email confirmation, crafted by our most diligent email composers.</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="primary" onClick={() => this.handleClose()}>
+                            OK
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </Container>
         );
     }
 
     saveEmail(emailAddress) {
-
+        this.setState({
+            ...this.state,
+            email: emailAddress
+        });
     }
 
     processPayment(paymentMethod) {
-        axios.post('https://wisconregtest.bcholmes.org/api/order_finalize.php', {
-            "orderId": store.getState().cart.orderId,
-            "paymentMethod": paymentMethod,
-            "email": this.state.email
-        })
-        .then(res => {
+        if (this.state.email && isValidEmail(this.state.email)) {
+            axios.post('https://wisconregtest.bcholmes.org/api/order_finalize.php', {
+                "orderId": store.getState().cart.orderId,
+                "paymentMethod": paymentMethod,
+                "email": this.state.email
+            })
+            .then(res => {
+                this.setState({
+                    ...this.state,
+                    message: null,
+                    showModal: true
+                });
+                store.dispatch(clearCart());
+            })
+            .catch(error => {
+                this.setState({
+                    ...this.state,
+                    message: "Sorry. There was a probably talking to the server. Try again?"
+                });
+            });
+        } else {
             this.setState({
                 ...this.state,
-                message: null
+                message: "Please provide a valid email address"
             });
-            store.dispatch(clearCart());
-            this.goToHome();
-        })
-        .catch(error => {
-            this.setState({
-                ...this.state,
-                message: "Sorry. There was a probably talking to the server. Try again?"
-            });
-        });
+        }
     }
+
+    handleClose() {
+        let state = this.state;
+        this.setState({
+            ...state, 
+            showModal: false
+        });
+        this.goToHome();
+    }
+
 
     goToHome() {
         const { history } = this.props;

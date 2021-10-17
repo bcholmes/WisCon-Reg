@@ -196,6 +196,7 @@ class OfferingList extends Component {
                 value['for'] = lastItem.for;
             }
         }
+        value.amount = offering.suggestedPrice || 0;
         this.setState({
             ...this.state,
             showModal: true,
@@ -207,8 +208,8 @@ class OfferingList extends Component {
 
     addItem() {
         let offering = this.state.selectedOffering;
-        let price = offering.suggestedPrice || 0;
         let values = this.state.values;
+        let price = values.amount || 0;
         let uuid = uuidv4();
         if (values.for) {
             axios.post('https://wisconregtest.bcholmes.org/api/order_item.php', {

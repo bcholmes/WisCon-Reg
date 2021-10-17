@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode($json);
 
         $order_uuid = $data->orderId;
-        if ($data->for && $data->offering) {
+        if ($data->values && $data->offering) {
 
             $order = find_order_by_order_uuid($ini, $conData, $order_uuid);
 
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if ($order) {
-                if (create_order_item_with_uuid($ini, $conData, $order->id, $data->for, $data->offering, $data->itemUUID)) {
+                if (create_order_item_with_uuid($ini, $conData, $order->id, $data->values, $data->offering, $data->itemUUID)) {
                     http_response_code(201);
                 } else {
                     http_response_code(500);
