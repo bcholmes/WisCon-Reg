@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/esm/Modal';
 import Spinner from 'react-bootstrap/Spinner';
+
 import { addToCart } from '../state/cartActions';
 import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
@@ -112,14 +115,14 @@ class OfferingList extends Component {
 
             let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts) 
                 ? [
-                    <Form.Check className="mb-3" id="volunteer" key="form-volunteer"
+                    <Form.Check className="mb-3" id="volunteer" key="form-volunteer" onClick={(e) => this.setFormValue('volunteer', e.target.checked)}
                             label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />,
-                    <Form.Check id="newsletter"  key="form-newsletter"
+                    <Form.Check id="newsletter"  key="form-newsletter" onClick={(e) => this.setFormValue('newsletter', e.target.checked)}
                             label="Would you like to subscribe by email to the WisCon / SF3 Newsletter, with updates about future WisCons and other SF3 events and activities?" />,
                     <Form.Text className="text-muted mb-3 ml-4" key="form-newsletter-text">
                             See more information <a href="https://wiscon.net/news/e-newsletter/" target="_blank" rel="noreferrer">here</a>
                     </Form.Text>,
-                    <Form.Check className="mb-3" id="snailMail" key="form-snailmail"
+                    <Form.Check className="mb-3" id="snailMail" key="form-snailmail" onClick={(e) => this.setFormValue('snailMail', e.target.checked)}
                             label="Would you like to receive annual reminder postcards by physical mail? (Requires a mailing address)" />
                 ]
                 : undefined;
@@ -140,7 +143,7 @@ class OfferingList extends Component {
                                 {description}
                                 <Form.Group className="mb-3" controlId="formName">
                                     <Form.Label className="sr-only">Name</Form.Label>
-                                    <Form.Control type="text" placeholder="Name" value={this.getFormValue('name')} onChange={(e) => this.setFormValue("name", e.target.value)}/>
+                                    <Form.Control type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
                                     <Form.Text className="text-muted">
                                         Please provide the full name of the person associated with this membership/item. 
                                         This name will appear on your badge, and does not need to be a wallet name.
@@ -190,7 +193,7 @@ class OfferingList extends Component {
             let items = store.getState().cart.items;
             if (items) {
                 let lastItem = items[items.length-1];
-                value['name'] = lastItem.for;
+                value['for'] = lastItem.for;
             }
         }
         this.setState({
@@ -206,15 +209,32 @@ class OfferingList extends Component {
         let offering = this.state.selectedOffering;
         let price = offering.suggestedPrice || 0;
         let values = this.state.values;
-        if (values.name) {
-            store.dispatch(addToCart(offering, values.name, 'bill@example.com', price));
-            this.setState({
-                ...this.state,
-                showModal: false,
-                selectedOffering: null,
-                values: null,
-                message: null
-            });
+        let uuid = uuidv4();
+        if (values.for) {
+            axios.post('https://wisconregtest.bcholmes.org/api/order_item.php', {
+                "orderId": store.getState().cart.orderId,
+                "for": values.for,
+                "itemUUID": uuid,
+                "offering": offering,
+                "values": values
+            })
+            .then(res => {
+                store.dispatch(addToCart(offering, values.for, values, uuid, price));
+                this.setState({
+                    ...this.state,
+                    showModal: false,
+                    selectedOffering: null,
+                    values: null,
+                    message: null
+                });
+                })
+            .catch(error => {
+                    this.setState({
+                        ...this.state,
+                        message: "Sorry. There was a probably talking to the server. Try again?"
+                    });
+                });
+
         } else {
             this.setState({
                 ...this.state,

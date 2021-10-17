@@ -1,15 +1,23 @@
 
 export const ADD_TO_CART = 'ADD_TO_CART';
+export const CLEAR_CART = 'CLEAR_CART';
 
-export function addToCart(offering, name, email, amount) {
+export function addToCart(offering, name, values, uuid, amount) {
    let payload = {
       offering: offering,
       for: name,
-      email: email,
-      amount: amount
+      values: values,
+      amount: amount,
+      itemUUID: uuid
    }
    return {
       type: ADD_TO_CART,
       payload
+   }
+}
+
+export function clearCart() {
+   return {
+      type: CLEAR_CART
    }
 }

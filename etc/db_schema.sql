@@ -229,5 +229,30 @@ select max(id),
 1, 'The WisCon Member Assistance Fund supports anyone who needs financial assistance to attend'
 from reg_offering;
 
+create table reg_order (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_uuid varchar(36) NOT NULL,
+    status varchar(32) NOT NULL DEFAULT 'IN_PROGRESS',
+    creation_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_modified_date TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+    payment_date TIMESTAMP NULL DEFAULT NULL,
+    payment_method varchar(32),
+    con_id INT NOT NULL,
+    FOREIGN KEY (con_id)
+        REFERENCES reg_con_info(id)
+        ON UPDATE RESTRICT ON DELETE CASCADE,
+);
 
-
+create table reg_order_item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    offering_id INT NOT NULL,
+    order_id INT NOT NULL,
+    for_name varchar(255) NOT NULL,
+    email_address varchar(255) NULL DEFAULT NULL,
+    FOREIGN KEY (offering_id)
+        REFERENCES reg_offering(id)
+        ON UPDATE RESTRICT ON DELETE CASCADE,
+    FOREIGN KEY (order_id)
+        REFERENCES reg_order(id)
+        ON UPDATE RESTRICT ON DELETE CASCADE
+);

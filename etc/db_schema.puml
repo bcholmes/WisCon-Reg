@@ -55,6 +55,12 @@ entity reg_offering_highlight {
 entity reg_order {
 * id : INT <<auto_increment>>
 --
+* con_id: INT
+* uuid: varchar(36)
+* status: varchar(32)
+* creation_date: TIMESTAMP
+* last_modified_date: TIMESTAMP
+  payment_method: varchar(32)
 }
 
 entity reg_order_item {

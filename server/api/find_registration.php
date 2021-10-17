@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             send_email(create_not_found_email($email, $conData->name, $ini), $subject, 
                 $email);
 
-            http_response_code(201);
+            http_response_code(204);
         } else {
             http_response_code(400);
         }

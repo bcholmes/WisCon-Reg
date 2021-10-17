@@ -1,8 +1,8 @@
 import { createStore, combineReducers } from 'redux'
 import { ADD_AUTH_CREDENTIAL, LOGOUT } from './authActions';
-import { ADD_TO_CART } from './cartActions';
+import { ADD_TO_CART, CLEAR_CART } from './cartActions';
 import { SET_OFFERINGS } from './offeringActions';
-
+import { v4 as uuidv4 } from 'uuid';
 
 const offeringInitialState = {
     loading: true,
@@ -10,14 +10,19 @@ const offeringInitialState = {
     items: []
 }
 
-
-const cartInitialState = {
-    items: []
-};
+const cartInitialState = createInitialCart();
 
 const authInitialState = {
     jwt: undefined
 }
+
+function createInitialCart() {
+    return {
+        orderId: uuidv4(),
+        items: []
+    };
+}
+
 
 const offerings = (state = offeringInitialState, action) => {
     switch (action.type) {
@@ -38,11 +43,14 @@ const cart = (state = cartInitialState, action) => {
     switch (action.type) {
         case ADD_TO_CART: 
             return {
+                ...state,
                 items: [
                     ...state.items,
                     action.payload
                 ]
             }
+        case CLEAR_CART:
+            return createInitialCart();
         default:
             return state;
     }
