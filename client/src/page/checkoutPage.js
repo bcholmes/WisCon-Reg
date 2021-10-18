@@ -112,7 +112,7 @@ class CheckoutPage extends Component {
                         <p>
                             Your order has been passed on to our finest registration volunteers. Each order is 
                             lovingly processed through our registration workflow, which includes a light spritzing of 
-                            intersectional feminist energy, before eventually being converted into your very own
+                            intersectional feminism, before eventually being converted into your very own
                             WisCon membership.
                         </p>
                         <p>You should also shortly receive an email confirmation, crafted by our most diligent email composers.</p>

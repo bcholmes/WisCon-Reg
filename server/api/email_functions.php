@@ -19,7 +19,7 @@ function send_email($body, $subject, $to, $cc = null) {
 
     $ok = true;
     try {
-        $message->addTo($to);
+        $message->setTo($to);
     } catch (Swift_SwiftException $e) {
         $ok = FALSE;
     }
