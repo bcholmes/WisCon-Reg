@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import { withRouter } from "react-router";
+import Alert from 'react-bootstrap/Alert';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -9,6 +11,8 @@ import download from 'downloadjs';
 
 import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
+import { isAuthenticated } from '../util/jwtUtil';
+import store from '../state/store';
 
 class RegistrationsPage extends Component {
 
@@ -23,18 +27,51 @@ class RegistrationsPage extends Component {
     }
 
     componentDidMount() {
-        this.loadData();
+        console.log("authenticated: " + isAuthenticated());
+        if (isAuthenticated()) {
+            this.loadData();
+
+            this.unsubscribe = store.subscribe(() => {
+                if (!isAuthenticated()) {
+                    this.goToHome();
+                }
+            });
+        } else {
+            this.goToHome();
+        }
     }
+
+    componentWillUnmount() {
+        if (this.unsubscribe) {
+            this.unsubscribe();
+        }
+    }
+
     render() {
         let spinner = this.state.loading ? (<div className="text-center"><Spinner animation="border" /></div>) : undefined;
         let message = (this.state.message) ? (<div className="alert alert-danger">{this.state.message}</div>) : undefined;
+        let warning = undefined;
+        if (!this.state.loading && !this.state.items && !message) {
+            warning = <Alert variant="warning">There are no registrations</Alert>;
+        }
+
+        let rows = this.state.items ? this.state.items.map((item, i) => {
+            return (<tr>
+                <td className="text-right">{item.id}</td>
+                <td>{item.title}</td>
+                <td className="text-right">{item.amount}</td>
+                <td>{item.for}</td>
+                <td>{item.email_address}</td>
+                <td className="text-center">{item.payment_method}</td>
+            </tr>);
+        }) : undefined;
 
         return (
             <Container className="mx-auto">
                 <PageHeader />
                 <h1>Registration List</h1>
                 {message}
-                <div className="alert alert-warning">There are no registrations.</div>
+                {warning}
                 <div className="row mb-3">
                     <div className="col-md-6">
                         <Form.Group controlId="formFilter">
@@ -47,19 +84,22 @@ class RegistrationsPage extends Component {
                         <Button variant="secondary" onClick={() => this.downloadReport()}>Download</Button>
                     </div>
                 </div>
-                <table className="table">
+                {spinner}
+                <table className="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th>Order Number</th>
+                            <th className="text-right">Id</th>
                             <th>Purchase Item</th>
-                            <th>Amount</th>
+                            <th className="text-right">Amount</th>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Payment Method</th>
+                            <th className="text-center">Payment Method</th>
                         </tr>
                     </thead>
+                    <tbody>
+                        {rows}
+                    </tbody>
                 </table>
-                {spinner}
                 <Footer />
             </Container>
         );
@@ -104,6 +144,11 @@ class RegistrationsPage extends Component {
             });
     }
 
+    goToHome() {
+        const { history } = this.props;
+        history.push('/');
+    }
+
     loadData() {
         let state = this.state;
         this.setState({
@@ -111,13 +156,14 @@ class RegistrationsPage extends Component {
             loading: true
         });
 
-        axios.get('https://wisconregtest.bcholmes.org/api/registration_list.php')
+        axios.get('https://wisconregtest.bcholmes.org/api/registrations_list.php')
         .then(res => {
             let state = this.state;
             this.setState({
                 ...state,
                 loading: false,
-                message: 'There are no registrations'
+                message: null,
+                items: res.data.items
             })
         })
         .catch(error => {
@@ -132,4 +178,4 @@ class RegistrationsPage extends Component {
     }
 }
 
-export default RegistrationsPage;
+export default withRouter(RegistrationsPage);

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/esm/Modal';
@@ -9,6 +10,7 @@ import Spinner from 'react-bootstrap/Spinner';
 import { addToCart } from '../state/cartActions';
 import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
+import { isValidEmail } from '../util/emailUtil';
 
 class OfferingList extends Component {
 
@@ -68,7 +70,7 @@ class OfferingList extends Component {
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
-                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) }>Add to Cart</Button>
+                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) }>Add to cart</Button>
                             </div>
                             </div>
                         </div>
@@ -85,7 +87,7 @@ class OfferingList extends Component {
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
-                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) } variant="outline-primary">Add to Cart</Button>
+                                <Button size="lg" className="w-100" onClick={()  => this.showModal(o) } variant="outline-primary">Add to cart</Button>
                             </div>
                             </div>
                         </div>
@@ -96,10 +98,15 @@ class OfferingList extends Component {
             let title = this.state.selectedOffering ? this.state.selectedOffering.title : undefined;
             let description = this.state.selectedOffering ? (<p>{this.state.selectedOffering.description}</p>) : undefined;
 
-            let message = this.state.message ? (<div className="alert alert-danger">{this.state.message}</div>) : undefined;
+            let message = this.state.messages ? this.state.messages.map((e, i)  => {
+                return (<Alert variant="danger" key={i}>{e}</Alert>); } ) : undefined;
+            let emailLabel = "Email address";
+            if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'OPTIONAL') {
+                emailLabel = "Email address (optional)"
+            }
             let emailOption =  (<Form.Group controlId="formEmail" key="email-field">
-                <Form.Label className="sr-only">Email</Form.Label>
-                <Form.Control type="email" placeholder="Email address" onChange={(e) => this.setFormValue("email", e.target.value)}/>
+                <Form.Label className="sr-only">{emailLabel}}</Form.Label>
+                <Form.Control type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
                 <Form.Text className="text-muted">
                     Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
                     sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
@@ -109,8 +116,17 @@ class OfferingList extends Component {
 
             if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'NO') {
                 emailOption = undefined;
-            } else if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'OPTIONAL') {
-                emailOption = [emailOption, <Form.Check className="mb-4" id="noEmail" label="Don't have an email address" key="no-email-check"/>]
+            }
+
+            let amountEntry = undefined;
+            if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null) {
+                amountEntry = (<Form.Group className="mb-3" controlId="amount">
+                    <Form.Label className="sr-only">Name</Form.Label>
+                    <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
+                    <Form.Text className="text-muted">
+                        Please choose the amount you wish provide for this item.
+                    </Form.Text>
+                </Form.Group>);
             }
 
             let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts) 
@@ -151,12 +167,13 @@ class OfferingList extends Component {
 
                                 </Form.Group>
                                 {emailOption}
+                                {amountEntry}
 
                                 {questions}
                             </Modal.Body>
                             <Modal.Footer>
                                 <Button variant="primary" onClick={() => this.addItem()}>
-                                    Add to Cart
+                                    Add to cart
                                 </Button>
                             </Modal.Footer>
                         </Form>
@@ -182,64 +199,105 @@ class OfferingList extends Component {
         this.setState({
             ...state,
             values: newValue,
-            message: null
+            messages: null
         });
 
+    }
+
+    isValidForm() {
+        return this.validateForm().length === 0;
+    }
+
+    toNumber(value) {
+        let n = Number(value);
+        if (isNaN(n)) {
+            return 0;
+        } else {
+            return n;
+        }
+    }
+
+    validateForm() {
+        let messages = [];
+        let offering = this.state.selectedOffering;
+        let values = this.state.values;
+        if (!values.for) {
+            messages.push("Please provide a name.");
+        }
+        if (offering.emailRequired === 'REQUIRED' && (!values.email || !isValidEmail(values.email))) {
+            messages.push("Please provide a valid email.");
+        } else if (values.email && !isValidEmail(values.email)) {
+            messages.push("That email doesn't look quite right.");
+        }
+        if (values.amount && !/^(\d*(\.\d{2})?)$/.test(values.amount)) {
+            messages.push("The amount value looks a bit fishy");
+        }
+        if (values.amount === '' || (values.amount === 0 && offering.suggestedPrice == null)) {
+            messages.push("Please provide an amount.");
+        }
+        return messages;
     }
 
     showModal(offering) {
         let value = {};
         if (!offering.isMembership) {
             let items = store.getState().cart.items;
-            if (items) {
+            if (items && items.length > 0) {
                 let lastItem = items[items.length-1];
                 value['for'] = lastItem.for;
             }
         }
         value.amount = offering.suggestedPrice || 0;
+        if (offering.suggestedPrice == null) {
+            value.amount = '';
+        }
         this.setState({
             ...this.state,
             showModal: true,
             selectedOffering: offering,
             values: value,
-            message: null
+            messages: null
         });
     }
 
     addItem() {
         let offering = this.state.selectedOffering;
         let values = this.state.values;
-        let price = values.amount || 0;
         let uuid = uuidv4();
-        if (values.for) {
+        let newValues = {
+            ...values,
+            amount: this.toNumber(values.amount)
+        }
+        let price = newValues.amount || 0;
+        if (this.isValidForm()) {
             axios.post('https://wisconregtest.bcholmes.org/api/order_item.php', {
                 "orderId": store.getState().cart.orderId,
                 "for": values.for,
                 "itemUUID": uuid,
                 "offering": offering,
-                "values": values
+                "values": newValues
             })
             .then(res => {
-                store.dispatch(addToCart(offering, values.for, values, uuid, price));
+                store.dispatch(addToCart(offering, values.for, newValues, uuid, price));
                 this.setState({
                     ...this.state,
                     showModal: false,
                     selectedOffering: null,
                     values: null,
-                    message: null
+                    messages: null
                 });
                 })
             .catch(error => {
                     this.setState({
                         ...this.state,
-                        message: "Sorry. There was a probably talking to the server. Try again?"
+                        messages: "Sorry. There was a probably talking to the server. Try again?"
                     });
                 });
 
         } else {
             this.setState({
                 ...this.state,
-                message: "Please provide a name."
+                messages: this.validateForm()
             });
         }
     }

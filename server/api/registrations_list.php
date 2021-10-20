@@ -1,0 +1,73 @@
+<?php
+// Copyright (c) 2018-2020 Peter Olszowka. All rights reserved. See copyright document for more details.
+
+require_once("config.php");
+require_once("db_common_functions.php");
+
+$ini = read_ini();
+$conData = find_current_con($ini);
+
+function find_registrations($conData, $ini) {
+    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
+    if (!$db) {
+        return false;
+    } else {
+        $query = <<<EOD
+    SELECT 
+            o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title
+    FROM 
+            reg_order o
+    LEFT OUTER JOIN reg_order_item i
+            ON
+                o.id = i.order_id
+    LEFT OUTER JOIN reg_offering off
+            ON 
+                i.offering_id = off.id
+    WHERE o.con_id  = ?
+        AND o.status in ('CHECKED_OUT', 'PAID')
+    ORDER BY o.finalized_date, o.id, i.id
+    EOD;
+
+        mysqli_set_charset($db, "utf8");
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $conData->id);
+        if (mysqli_stmt_execute($stmt)) {
+
+            $items = array();
+            $result = mysqli_stmt_get_result($stmt);
+            while ($row = mysqli_fetch_object($result)) {
+                $current = array(
+                    "id" => $row->id, 
+                    "confirmation_mail" => $row->confirmation_email,
+                    "title" => $row->title,
+                    "finalized_date" => $row->finalized_date,
+                    "paid" => ($row->status == 'PAID' ? "\"Yes\"" : "\"No\""),
+                    "amount" => $row->amount,
+                    "for" => $row->for_name,
+                    "email_address" => $row->email_address,
+                    "payment_method" => $row->payment_method
+                );
+                array_push($items, $current);
+            }
+            mysqli_stmt_close($stmt);
+            mysqli_close($db);
+            return $items;
+        } else {
+            mysqli_close($db);
+            return false;
+        }
+    }
+}
+
+
+$items = find_registrations($conData, $ini);
+
+if ($items === false) {
+    http_response_code(500);
+} else {
+    $result = array( "items" => $items);
+    $json_string = json_encode($result);
+    echo $json_string;
+}
+
+?>

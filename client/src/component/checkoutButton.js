@@ -11,11 +11,15 @@ class CheckoutButton extends Component {
             enabled: store.getState().cart.items.length > 0
         }
 
-        store.subscribe(() => {
+        this.unsubscribe = store.subscribe(() => {
             this.setState({
                 enabled: store.getState().cart.items.length > 0
             });
         });
+    }
+
+    componentWillUnmount() {
+        this.unsubscribe();
     }
 
     render() {

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import store from '../state/store'
+import { formatAmount } from '../util/numberUtil';
 
 class Cart extends Component {
 
@@ -10,11 +11,17 @@ class Cart extends Component {
             cart: store.getState().cart.items
         }
 
-        store.subscribe(() => {
+        this.unsubscribe = store.subscribe(() => {
             this.setState({
                 cart: store.getState().cart.items
             });
         });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribe) {
+            this.unsubscribe();
+        }
     }
 
     render() {
@@ -27,7 +34,7 @@ class Cart extends Component {
                     <h6 className="my-0">{e.offering.title}</h6>
                     <small className="text-muted">{e.for}</small>
                 </div>
-                <span className="text-muted">${e.amount.toFixed(0)}</span>
+                <span className="text-muted">{formatAmount(e.amount)}</span>
             </li>
         });
         let message = count <= 0 
@@ -36,7 +43,7 @@ class Cart extends Component {
                 {itemList}
                 <li className="list-group-item d-flex justify-content-between lh-sm" key="total">
                     <h6 className="my-0">Total (USD)</h6>
-                    <strong>${total.toFixed(0)}</strong>
+                    <strong>{formatAmount(total)}</strong>
                 </li>
             </ul>);
 
