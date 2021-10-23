@@ -13,6 +13,7 @@ import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
 import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
+import { logout } from '../state/authActions';
 
 class RegistrationsPage extends Component {
 
@@ -66,6 +67,17 @@ class RegistrationsPage extends Component {
             </tr>);
         }) : undefined;
 
+        let pagination = this.state.pagination ? (
+                <div className="row mb-2">
+                    <div className="col-md-8">
+
+                    </div>
+                    <div className="col-md-4 text-right">
+                        <b>Displaying records {this.state.pagination.start} to {this.state.pagination.end} of {this.state.pagination.totalRows}</b>
+                    </div>
+                </div>
+        ) : undefined;
+
         return (
             <Container className="mx-auto">
                 <PageHeader />
@@ -76,7 +88,14 @@ class RegistrationsPage extends Component {
                     <div className="col-md-6">
                         <Form.Group controlId="formFilter">
                             <Form.Label className="sr-only">Filter</Form.Label>
-                            <Form.Control type="text" placeholder="Find..." />
+                            <div class="input-group mb-3">
+                            <Form.Control type="text" placeholder="Find..." onChange={(e) => this.executeFilter(e.target.value)}/>
+                            <span class="input-group-append">
+                                <button class="btn btn-secondary" type="button">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </span>
+                            </div>
                         </Form.Group>
 
                     </div>
@@ -85,6 +104,7 @@ class RegistrationsPage extends Component {
                     </div>
                 </div>
                 {spinner}
+                {pagination}
                 <table className="table table-hover table-sm">
                     <thead>
                         <tr>
@@ -105,9 +125,23 @@ class RegistrationsPage extends Component {
         );
     }
 
+    executeFilter(term) {
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+        }
+        this.timeout = setTimeout(() => {
+            this.loadDataWithFilter(term);
+            this.timeout = undefined;
+        }, 1000);
+    }
+
     async downloadReport() {
 
-        axios.get('https://wisconregtest.bcholmes.org/api/download_report.php')
+        axios.get('https://wisconregtest.bcholmes.org/api/download_report.php', {
+                headers: {
+                    "Authorization": "Bearer " + store.getState().auth.jwt
+                }
+            })
             .then(res => {
 
                 let fileName = "report.csv";
@@ -141,6 +175,9 @@ class RegistrationsPage extends Component {
                     loading: false,
                     message: message
                 })
+                if (error.response && error.response.status === 401) {
+                    store.dispatch(logout());
+                }
             });
     }
 
@@ -149,32 +186,52 @@ class RegistrationsPage extends Component {
         history.push('/');
     }
 
+    loadDataWithFilter(term) {
+        if (term) {
+            this.loadDataWithUrl('https://wisconregtest.bcholmes.org/api/registrations_list.php?term=' + term);
+        } else {
+            this.loadData();
+        }
+    }
     loadData() {
+        this.loadDataWithUrl('https://wisconregtest.bcholmes.org/api/registrations_list.php');
+    }
+    loadDataWithUrl(url) {
         let state = this.state;
         this.setState({
             ...state,
             loading: true
         });
 
-        axios.get('https://wisconregtest.bcholmes.org/api/registrations_list.php')
-        .then(res => {
-            let state = this.state;
-            this.setState({
-                ...state,
-                loading: false,
-                message: null,
-                items: res.data.items
+        if (isAuthenticated()) {
+            axios.get(url, {
+                headers: {
+                    "Authorization": "Bearer " + store.getState().auth.jwt
+                }
             })
-        })
-        .catch(error => {
-            let state = this.state;
-            let message = "The registration list could not be loaded."
-            this.setState({
-                ...state,
-                loading: false,
-                message: message
+            .then(res => {
+                let state = this.state;
+                this.setState({
+                    ...state,
+                    loading: false,
+                    message: null,
+                    items: res.data.items,
+                    pagination: res.data.pagination
+                })
             })
-        });
+            .catch(error => {
+                let state = this.state;
+                let message = "The registration list could not be loaded."
+                this.setState({
+                    ...state,
+                    loading: false,
+                    message: message
+                })
+                if (error.response && error.response.status === 401) {
+                    store.dispatch(logout());
+                }
+            });
+        }
     }
 }
 

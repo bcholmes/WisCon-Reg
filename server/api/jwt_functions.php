@@ -20,11 +20,11 @@ function jwt_from_header() {
 // opposed to a hacker in Russia). An authenticated user (i.e. someone
 // who has logged in) has a token that includes a participant scope and
 // the token's subject ("sub") references the user's badgeid.
-function jwt_validate_token($token, $as_participant_scope = false) {
+function jwt_validate_token($token, $key, $as_admin_scope = false) {
     
     $jwt = new Emarref\Jwt\Jwt();
 
-    $algorithm = new Emarref\Jwt\Algorithm\Hs512(JWT_TOKEN_SIGNING_KEY);
+    $algorithm = new Emarref\Jwt\Algorithm\Hs512($key);
     $encryption = Emarref\Jwt\Encryption\Factory::create($algorithm);
 	$context = new Emarref\Jwt\Verification\Context($encryption);
 
@@ -43,9 +43,9 @@ function jwt_validate_token($token, $as_participant_scope = false) {
             $verifier->verify($deserialized);
         }
 
-        if ($as_participant_scope) {
+        if ($as_admin_scope) {
             $scope = $deserialized->getPayload()->findClaimByName("scope");
-            if ($scope === null || !in_array("participant", $scope->getValue())) {
+            if ($scope === null || !in_array("admin", $scope->getValue())) {
                 return false;
             }
         }   
