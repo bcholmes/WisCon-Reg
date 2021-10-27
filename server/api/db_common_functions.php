@@ -131,6 +131,15 @@ function mark_order_as_finalized($ini, $order_id, $payment_method, $email_addres
     }
 }
 
+function boolean_value_from($value) {
+    if ($value == null) {
+        return null;
+    } else if ($value) {
+        return "Y";
+    } else {
+        return "N";
+    }
+}
 
 function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offering, $item_uuid) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
@@ -139,8 +148,8 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
     } else {
         $query = <<<EOD
  INSERT
-        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, offering_id)
- SELECT ?, ?, ?, ?, ?, o.id
+        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, offering_id)
+ SELECT ?, ?, ?, ?, ?, ?, ?, ?, o.id
    from reg_offering o
  where  o.id = ?
    and  o.con_id = ?;
@@ -148,7 +157,11 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
 
         mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "isssdii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, $offering->id, $conData->id);
+        mysqli_stmt_bind_param($stmt, "isssdsssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
+            boolean_value_from($values->newsletter),
+            boolean_value_from($values->volunteer),
+            boolean_value_from($values->snailMail),
+            $offering->id, $conData->id);
 
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);

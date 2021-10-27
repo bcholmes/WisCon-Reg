@@ -249,6 +249,10 @@ create table reg_order_item (
     order_id INT NOT NULL,
     for_name varchar(255) NOT NULL,
     email_address varchar(255) NULL DEFAULT NULL,
+    amount decimal(13,2) NOT NULL DEFAULT 0,
+    email_ok char(1),
+    volunteer_ok char(1),
+    snail_mail_ok char(1),
     FOREIGN KEY (offering_id)
         REFERENCES reg_offering(id)
         ON UPDATE RESTRICT ON DELETE CASCADE,

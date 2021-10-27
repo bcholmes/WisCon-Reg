@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import { withRouter } from "react-router";
+import {loadStripe} from '@stripe/stripe-js';
+import {CardElement, Elements, ElementsConsumer} from '@stripe/react-stripe-js';
 
 import Accordion from 'react-bootstrap/Accordion';
 import Alert from 'react-bootstrap/Alert';
@@ -16,6 +18,42 @@ import Footer from '../component/footer';
 import { clearCart } from '../state/cartActions';
 import {  isValidEmail } from '../util/emailUtil';
 import store from '../state/store';
+
+const stripePromise = loadStripe('pk_test_51Ji4wMC2R9aJdAuoBn5Q1TasCjN2CFBlGLYK2aN50y1iJD7JRVEgG5AEhH6PvdQf32IYOCFfhvYavMMlBVq5atgn007JKQegmA');
+
+const StripeCheckoutForm = () => (
+    <ElementsConsumer>
+      {({stripe, elements}) => (
+        <CheckoutForm stripe={stripe} elements={elements} />
+      )}
+    </ElementsConsumer>
+);
+
+class CheckoutForm extends React.Component {
+    handleSubmit = async (event) => {
+      event.preventDefault();
+      const {stripe, elements} = this.props;
+  
+      if (elements == null) {
+        return;
+      }
+  
+      const {error, paymentMethod} = await stripe.createPaymentMethod({
+        type: 'card',
+        card: elements.getElement(CardElement),
+      });
+    };
+  
+    render() {
+      const { stripe } = this.props;
+      return (
+        <form onSubmit={this.handleSubmit}>
+          <CardElement />
+          <Button className="mt-3" type="submit" disabled={!stripe}>Pay by credit card</Button>
+        </form>
+      );
+    }
+  }
 
 class CheckoutPage extends Component {
 
@@ -59,8 +97,10 @@ class CheckoutPage extends Component {
                                 <Accordion.Collapse eventKey="0">
                                     <Card.Body>
 
+                                        <Elements stripe={stripePromise}>
+                                            <StripeCheckoutForm />
+                                        </Elements>
 
-                                        <Button onClick={() => this.processPayment('CARD')}>Pay by credit card</Button>
                                     </Card.Body>
 
                                 </Accordion.Collapse>

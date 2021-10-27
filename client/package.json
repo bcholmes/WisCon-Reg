@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@stripe/react-stripe-js": "^1.6.0",
+    "@stripe/stripe-js": "^1.20.3",
     "axios": "^0.22.0",
     "bootstrap": "^4.6.0",
     "downloadjs": "1.4.7",
@@ -12,7 +14,7 @@
     "react-redux": "7.2.5",
     "react-router": "^5.2.1",
     "react-router-dom": "^5.2.1",
-    "react-scripts": "4.0.3",
+    "react-scripts": "^4.0.3",
     "uuid": "8.3.2"
   },
   "devDependencies": {

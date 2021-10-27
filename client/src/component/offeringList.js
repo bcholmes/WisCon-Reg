@@ -105,7 +105,7 @@ class OfferingList extends Component {
                 emailLabel = "Email address (optional)"
             }
             let emailOption =  (<Form.Group controlId="formEmail" key="email-field">
-                <Form.Label className="sr-only">{emailLabel}}</Form.Label>
+                <Form.Label className="sr-only">{emailLabel}</Form.Label>
                 <Form.Control type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
                 <Form.Text className="text-muted">
                     Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
