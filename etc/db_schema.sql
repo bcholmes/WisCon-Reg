@@ -260,3 +260,5 @@ create table reg_order_item (
         REFERENCES reg_order(id)
         ON UPDATE RESTRICT ON DELETE CASCADE
 );
+
+alter table reg_order add column payment_intent_id varchar(1024);

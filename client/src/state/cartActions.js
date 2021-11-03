@@ -1,6 +1,8 @@
+import store from './store';
 
 export const ADD_TO_CART = 'ADD_TO_CART';
 export const CLEAR_CART = 'CLEAR_CART';
+export const ADD_STRIPE_SECRET = 'ADD_STRIPE_SECRET';
 
 export function addToCart(offering, name, values, uuid, amount) {
    let payload = {
@@ -21,3 +23,26 @@ export function clearCart() {
       type: CLEAR_CART
    }
 }
+
+export function addStripeSecret(clientSecret) {
+   return {
+      type: ADD_STRIPE_SECRET,
+      payload: clientSecret
+   }
+}
+
+
+export function calculateTotal() {
+   let currency = 'USD';
+   let total = 0;
+   store.getState().cart.items.forEach(e => {
+       total += e.amount;
+       currency = e.offering.currency;
+   });
+
+   return {
+       currency: currency,
+       amount: total
+   }
+}
+

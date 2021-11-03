@@ -46,7 +46,7 @@ function find_order_by_order_uuid($ini, $conData, $order_uuid) {
     } else {
         $query = <<<EOD
  SELECT 
-        o.id
+        o.id, o.status, o.payment_intent_id
    FROM 
         reg_order o
   WHERE 

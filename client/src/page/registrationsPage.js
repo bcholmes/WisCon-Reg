@@ -23,7 +23,8 @@ class RegistrationsPage extends Component {
             records: {
                 rows: []
             },
-            loading: false
+            loading: false,
+            term: ''
         }
     }
 
@@ -57,7 +58,7 @@ class RegistrationsPage extends Component {
         }
 
         let rows = this.state.items ? this.state.items.map((item, i) => {
-            return (<tr>
+            return (<tr key={item.id + '-' + i}>
                 <td className="text-right">{item.id}</td>
                 <td>{item.title}</td>
                 <td className="text-right">{item.amount}</td>
@@ -86,18 +87,19 @@ class RegistrationsPage extends Component {
                 {warning}
                 <div className="row mb-3">
                     <div className="col-md-6">
-                        <Form.Group controlId="formFilter">
-                            <Form.Label className="sr-only">Filter</Form.Label>
-                            <div class="input-group mb-3">
-                            <Form.Control type="text" placeholder="Find..." onChange={(e) => this.executeFilter(e.target.value)}/>
-                            <span class="input-group-append">
-                                <button class="btn btn-secondary" type="button">
-                                    <i class="fa fa-times"></i>
-                                </button>
-                            </span>
-                            </div>
-                        </Form.Group>
-
+                        <Form>
+                            <Form.Group controlId="term">
+                                <Form.Label className="sr-only">Filter</Form.Label>
+                                <div className="input-group mb-3">
+                                <Form.Control value={this.getTerm()} placeholder="Find..." name="filter" onChange={(e) => this.executeFilter(e.target.value)} />
+                                <span className="input-group-append">
+                                    <button className="btn btn-secondary" type="button" onClick={() => this.fastExecuteFilter()}>
+                                        <i className="fa fa-times"></i>
+                                    </button>
+                                </span>
+                                </div>
+                            </Form.Group>
+                        </Form>
                     </div>
                     <div className="col-md-6 text-right">
                         <Button variant="secondary" onClick={() => this.downloadReport()}>Download</Button>
@@ -125,14 +127,30 @@ class RegistrationsPage extends Component {
         );
     }
 
+    getTerm() {
+        return this.state.term || '';
+    }
     executeFilter(term) {
         if (this.timeout) {
             clearTimeout(this.timeout);
         }
+        this.setState({
+            ...this.state,
+            term: term
+        })
         this.timeout = setTimeout(() => {
             this.loadDataWithFilter(term);
             this.timeout = undefined;
         }, 1000);
+    }
+
+    fastExecuteFilter() {
+        let state = this.state;
+        this.setState({
+            ...state,
+            term: ''
+        })
+        this.loadData();
     }
 
     async downloadReport() {

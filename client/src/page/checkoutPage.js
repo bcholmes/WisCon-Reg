@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios';
 import { withRouter } from "react-router";
 import {loadStripe} from '@stripe/stripe-js';
-import {CardElement, Elements, ElementsConsumer} from '@stripe/react-stripe-js';
+import {CardElement, Elements, ElementsConsumer, PaymentElement } from '@stripe/react-stripe-js';
 
 import Accordion from 'react-bootstrap/Accordion';
 import Alert from 'react-bootstrap/Alert';
@@ -10,46 +10,73 @@ import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
+import Spinner from 'react-bootstrap/Spinner';
 
 import Container from 'react-bootstrap/Container';
 import PageHeader from '../component/pageHeader';
 import Cart from '../component/cart';
 import Footer from '../component/footer';
-import { clearCart } from '../state/cartActions';
+import { clearCart, calculateTotal } from '../state/cartActions';
 import {  isValidEmail } from '../util/emailUtil';
+import { formatAmount } from '../util/numberUtil';
 import store from '../state/store';
 
 const stripePromise = loadStripe('pk_test_51Ji4wMC2R9aJdAuoBn5Q1TasCjN2CFBlGLYK2aN50y1iJD7JRVEgG5AEhH6PvdQf32IYOCFfhvYavMMlBVq5atgn007JKQegmA');
 
-const StripeCheckoutForm = () => (
-    <ElementsConsumer>
-      {({stripe, elements}) => (
-        <CheckoutForm stripe={stripe} elements={elements} />
-      )}
-    </ElementsConsumer>
-);
+export function StripeCheckoutForm(props) {
+
+    return (<ElementsConsumer>
+        {({stripe, elements}) => 
+            <CheckoutForm stripe={stripe} elements={elements} onSubmit={props.onSubmit} />
+        }
+        </ElementsConsumer>
+    );
+}
 
 class CheckoutForm extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            loading: false
+        };
+    }
     handleSubmit = async (event) => {
       event.preventDefault();
-      const {stripe, elements} = this.props;
-  
-      if (elements == null) {
-        return;
-      }
-  
-      const {error, paymentMethod} = await stripe.createPaymentMethod({
-        type: 'card',
-        card: elements.getElement(CardElement),
+      this.setState({
+          loading: true
       });
+      const {stripe, elements, onSubmit} = this.props;
+
+      if (elements != null && onSubmit) {
+          onSubmit(stripe, elements, () => this.hideSpinner());
+      }
     };
+
+    hideSpinner() {
+        this.setState({
+            loading: false
+        })
+    }
   
     render() {
       const { stripe } = this.props;
+      const total = formatTotal();
+      const spinner = this.state.loading ? (<Spinner
+            as="span"
+            animation="border"
+            size="sm"
+            role="status"
+            aria-hidden="true"
+        />) : undefined;
       return (
-        <form onSubmit={this.handleSubmit}>
-          <CardElement />
-          <Button className="mt-3" type="submit" disabled={!stripe}>Pay by credit card</Button>
+        <form onSubmit={(e) => this.handleSubmit(e)}>
+            <p>Provide your credit card information, below, to process your payment for {total}.</p>
+            <PaymentElement />
+            <Button className="mt-3" type="submit" disabled={!stripe || this.state.loading}>
+                {spinner}
+                Pay by credit card
+            </Button>
         </form>
       );
     }
@@ -66,9 +93,11 @@ class CheckoutPage extends Component {
     }
 
     render() {
-        const total = this.calculateTotal();
+        const total = formatTotal();
         let message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
-
+        const options = {
+            clientSecret: store.getState().cart.clientSecret
+        };
         return (
             <Container className="mx-auto">
                 <PageHeader />
@@ -97,8 +126,8 @@ class CheckoutPage extends Component {
                                 <Accordion.Collapse eventKey="0">
                                     <Card.Body>
 
-                                        <Elements stripe={stripePromise}>
-                                            <StripeCheckoutForm />
+                                        <Elements stripe={stripePromise} options={options}>
+                                            <StripeCheckoutForm onSubmit={(stripe, card, completion) => this.processCardPayment(stripe, card, completion)}/>
                                         </Elements>
 
                                     </Card.Body>
@@ -174,7 +203,7 @@ class CheckoutPage extends Component {
         });
     }
 
-    processPayment(paymentMethod) {
+    processPayment(paymentMethod, completion) {
         if (this.state.email && isValidEmail(this.state.email)) {
             axios.post('https://wisconregtest.bcholmes.org/api/order_finalize.php', {
                 "orderId": store.getState().cart.orderId,
@@ -182,6 +211,9 @@ class CheckoutPage extends Component {
                 "email": this.state.email
             })
             .then(res => {
+                if (completion) {
+                    completion();
+                }
                 this.setState({
                     ...this.state,
                     message: null,
@@ -190,9 +222,13 @@ class CheckoutPage extends Component {
                 store.dispatch(clearCart());
             })
             .catch(error => {
+                if (completion) {
+                    completion();
+                }
+                console.log(error);
                 this.setState({
                     ...this.state,
-                    message: "Sorry. There was a probably talking to the server. Try again?"
+                    message: "Sorry. There was a problem talking to the server. Try again?"
                 });
             });
         } else {
@@ -229,17 +265,38 @@ class CheckoutPage extends Component {
         return result || '';
     }
 
-    calculateTotal() {
-        let currency = 'USD';
-        let total = 0;
-        store.getState().cart.items.forEach(e => {
-            total += e.amount;
-            currency = e.offering.currency;
-        });
-
-        return currency + ' $' + total.toFixed(0);
+    processStripePaymentMethod(stripe, elements, completion) {
+        if (this.state.email && isValidEmail(this.state.email)) {
+            stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: "http://localhost:3000/checkout",
+                },
+                redirect: "if_required"
+            }).then(res => {
+                completion(res);
+            });
+        } else {
+            this.setState({
+                ...this.state,
+                message: "Please provide a valid email address"
+            });
+            completion();
+        }
     }
 
+    processCardPayment(stripe, card, completion) {
+        this.processStripePaymentMethod(stripe, card, (res => {
+            this.processPayment('CARD', completion);
+        }));
+    }
 }
+
+function formatTotal() {
+    let total = calculateTotal();
+    return total.currency + ' ' + formatAmount(total.amount, total.currency);
+}
+
+
 
 export default withRouter(CheckoutPage);

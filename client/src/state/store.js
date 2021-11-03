@@ -1,6 +1,6 @@
 import { createStore, combineReducers } from 'redux'
 import { ADD_AUTH_CREDENTIAL, LOGOUT } from './authActions';
-import { ADD_TO_CART, CLEAR_CART } from './cartActions';
+import { ADD_STRIPE_SECRET, ADD_TO_CART, CLEAR_CART } from './cartActions';
 import { SET_OFFERINGS } from './offeringActions';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,6 +49,11 @@ const cart = (state = cartInitialState, action) => {
                     action.payload
                 ]
             }
+        case ADD_STRIPE_SECRET:
+            return {
+                ...state,
+                clientSecret: action.payload
+            };
         case CLEAR_CART:
             return createInitialCart();
         default:

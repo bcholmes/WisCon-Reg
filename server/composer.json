@@ -1,6 +1,7 @@
 {
     "require": {
         "emarref/jwt": "^1.0",
-        "swiftmailer/swiftmailer": "^6.0"
+        "swiftmailer/swiftmailer": "^6.0",
+        "stripe/stripe-php": "^7.100"
     }
 }

@@ -8,11 +8,19 @@ require_once("jwt_functions.php");
 $ini = read_ini();
 $conData = find_current_con($ini);
 
-function find_registrations($conData, $ini) {
+function find_registrations($conData, $ini, $term, $page, $pageSize) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
     } else {
+        $filterQuery = "";
+        if ($term) {
+            $id_clause = (is_numeric($term)) ? (" or o.id = " . $term) : "";
+            $termPhrase = '%' . mysqli_real_escape_string($db, strtolower($term)) . '%';
+            $filterQuery = "and (i.for_name like '" . $termPhrase . "' OR i.email_address like '" . $termPhrase 
+                . "' or o.confirmation_email like '" . $termPhrase . "'" . $id_clause . ")";
+        }
+
         $query = <<<EOD
     SELECT 
             o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title
@@ -26,6 +34,7 @@ function find_registrations($conData, $ini) {
                 i.offering_id = off.id
     WHERE o.con_id  = ?
         AND o.status in ('CHECKED_OUT', 'PAID')
+        $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
     EOD;
 
@@ -101,9 +110,10 @@ function count_registrations($conData, $ini) {
     }
 }
 
+$term = $_REQUEST['term'];
 
 $count = count_registrations($conData, $ini);
-$items = find_registrations($conData, $ini);
+$items = find_registrations($conData, $ini, $term, 0, 100);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
     http_response_code(401);
