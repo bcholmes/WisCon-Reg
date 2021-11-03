@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios';
 import { withRouter } from "react-router";
 import {loadStripe} from '@stripe/stripe-js';
-import {CardElement, Elements, ElementsConsumer, PaymentElement } from '@stripe/react-stripe-js';
+import {Elements, ElementsConsumer, PaymentElement } from '@stripe/react-stripe-js';
 
 import Accordion from 'react-bootstrap/Accordion';
 import Alert from 'react-bootstrap/Alert';

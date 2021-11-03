@@ -11,6 +11,7 @@ import { addToCart } from '../state/cartActions';
 import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
 import { isValidEmail } from '../util/emailUtil';
+import { formatAmount } from '../util/numberUtil';
 
 class OfferingList extends Component {
 
@@ -57,6 +58,7 @@ class OfferingList extends Component {
                     return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
                 })
                 let price = o.suggestedPrice === undefined || o.suggestedPrice === null ? 'Any' : (o.suggestedPrice ===  0 ? 'Free' : ('$' + o.suggestedPrice.toFixed(0)));
+                let priceSuffix = this.isVariableAmount(o) ? (<small className="text-muted">+/-</small>) : undefined;
 
                 if (o.emphasis) {
                     return (
@@ -66,7 +68,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price }</h1>
+                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
@@ -83,7 +85,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price }</h1>
+                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {highlights}
                                 </ul>
@@ -125,6 +127,15 @@ class OfferingList extends Component {
                     <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
                     <Form.Text className="text-muted">
                         Please choose the amount you wish provide for this item.
+                    </Form.Text>
+                </Form.Group>);
+            } else if (this.isVariableAmount(this.state.selectedOffering)) {
+                amountEntry = (<Form.Group className="mb-3" controlId="amount">
+                    <Form.Label className="sr-only">Name</Form.Label>
+                    <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
+                    <Form.Text className="text-muted">
+                        The suggested price for this item ({this.state.selectedOffering.title}) is {formatAmount(this.state.selectedOffering.suggestedPrice, this.state.selectedOffering.currency)}.
+                        Please choose an amount between {formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency)} and {formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency)}.
                     </Form.Text>
                 </Form.Group>);
             }
@@ -183,6 +194,14 @@ class OfferingList extends Component {
         }
     }
 
+    isVariableAmount(offering) {
+        if (offering) {
+            return offering.minimumPrice && offering.maximumPrice;
+        } else {
+            return false;
+        }
+    }
+
     getFormValue(formName) {
         if (this.state.values) {
             return this.state.values[formName] || '';
@@ -231,9 +250,12 @@ class OfferingList extends Component {
         }
         if (values.amount && !/^(\d*(\.\d{2})?)$/.test(values.amount)) {
             messages.push("The amount value looks a bit fishy");
-        }
-        if (values.amount === '' || (values.amount === 0 && offering.suggestedPrice == null)) {
+        } else if (values.amount === '' || (values.amount === 0 && offering.suggestedPrice == null)) {
             messages.push("Please provide an amount.");
+        } else if (this.isVariableAmount(offering) && values.amount < offering.minimumPrice) {
+            messages.push("The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency));
+        } else if (this.isVariableAmount(offering) && values.amount > offering.maximumPrice) {
+            messages.push("The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency));
         }
         return messages;
     }

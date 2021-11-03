@@ -29,7 +29,6 @@ class RegistrationsPage extends Component {
     }
 
     componentDidMount() {
-        console.log("authenticated: " + isAuthenticated());
         if (isAuthenticated()) {
             this.loadData();
 
