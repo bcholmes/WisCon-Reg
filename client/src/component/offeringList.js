@@ -12,7 +12,7 @@ import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
 import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
-import { serverUrl } from '../util/sdlcUtil';
+import { sdlc } from '../util/sdlcUtil';
 
 class OfferingList extends Component {
 
@@ -607,7 +607,7 @@ class OfferingList extends Component {
         }
         let price = newValues.amount || 0;
         if (this.isValidForm()) {
-            axios.post(serverUrl('/api/order_item.php'), {
+            axios.post(sdlc.serverUrl('/api/order_item.php'), {
                 "orderId": store.getState().cart.orderId,
                 "for": values.for,
                 "itemUUID": uuid,

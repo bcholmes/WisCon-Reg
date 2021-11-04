@@ -83,7 +83,7 @@ values
 insert into reg_offering_highlight 
 (offering_id, sort_order, highlight_text)
 select max(id),
-1, 'Available only to previous Guests of Honor.'
+1, 'Available only to previous Guests of Honor'
 from reg_offering;
 
 insert into reg_offering 
@@ -147,7 +147,7 @@ from reg_offering;
 insert into reg_offering 
 (sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
 values
-(5, 'Wiscon Child Care', 1, '2022-05-31 23:59:59', 0.00, 
+(5, 'WisCon Child Care', 1, '2022-05-31 23:59:59', 0.00, 
 'Child Membership (Ages 0-6) for WisCon 45 in May 2022. Includes on-site child care by licensed providers during the day, on each day of the convention (check wiscon.net for details and hours).', 
 'Y', 'N', 'NO');
 
@@ -212,7 +212,7 @@ values
 insert into reg_offering_highlight 
 (offering_id, sort_order, highlight_text)
 select max(id),
-1, 'Donations to the general fund for SF3, WisCon''s parent organization.'
+1, 'Donations to the general fund for SF3, WisCon''s parent organization'
 from reg_offering;
 
 
@@ -271,3 +271,18 @@ alter table reg_order_item add column zip_or_postal_code varchar(255);
 alter table reg_order_item add column country varchar(1024);
 
 alter table reg_offering add column address_required char(1) not null default 'N';
+
+update reg_offering set sort_order = sort_order * 10;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(25, 'Online Membership', 1, '2022-05-31 23:59:59', 40.00, 
+'The Online Membership provides access to the online portion of WisCon 2022 (visit https://wiscon.net/register/ for more information)', 
+'Y', 'Y', 'REQUIRED');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Online Access to Streamed Events'
+from reg_offering;

@@ -19,7 +19,7 @@ import Footer from '../component/footer';
 import { clearCart, calculateTotal } from '../state/cartActions';
 import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
-import { stripePublicKey } from '../util/sdlcUtil';
+import { stripePublicKey, sdlc } from '../util/sdlcUtil';
 import store from '../state/store';
 
 const stripePromise = loadStripe(stripePublicKey());
@@ -137,7 +137,7 @@ class CheckoutPage extends Component {
                             </Card>
                             <Card>
                                 <Accordion.Toggle as={Card.Header}  variant="link" eventKey="1">
-                                    Pay with Check <span title="This spelling makes me sad.">[sic]</span>
+                                    Pay with Check
                                 </Accordion.Toggle>
                                 <Accordion.Collapse eventKey="1">
                                     <Card.Body>
@@ -160,8 +160,10 @@ class CheckoutPage extends Component {
                                 </Accordion.Toggle>
                                 <Accordion.Collapse eventKey="2">
                                     <Card.Body>
-                                        <p>Your membership and/or other items will be available at the WisCon registration desk, as normal. 
-                                        You will need to pay in full ({total}) at pick-up time.</p>
+                                        <p>If you choose to pay at the door, your membership will be reserved. If we approach the 
+                                            membership cap, we may contact you to ask that you confirm that you still plan to 
+                                            attend. At the convention, you will need to pay in full ({total}) when picking up 
+                                            your badge(s) and/or dessert ticket(s).</p>
 
                                         <Button onClick={() => this.processPayment('CASH')}>Pay at door</Button>
                                     </Card.Body>
@@ -206,7 +208,7 @@ class CheckoutPage extends Component {
 
     processPayment(paymentMethod, completion) {
         if (this.state.email && isValidEmail(this.state.email)) {
-            axios.post('https://wisconregtest.bcholmes.org/api/order_finalize.php', {
+            axios.post(sdlc.serverUrl('/api/order_finalize.php'), {
                 "orderId": store.getState().cart.orderId,
                 "paymentMethod": paymentMethod,
                 "email": this.state.email

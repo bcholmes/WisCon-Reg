@@ -1,19 +1,30 @@
 
 const hostname = window && window.location && window.location.hostname;
 
-function hostPrefix() {
-    if (hostname === 'localhost') {
-        return 'https://wisconregtest.bcholmes.org/';
-    } else {
-        return 'https://' + hostname + '/';
-    }
-}
+class SdlcUtil {
 
-export function serverUrl(path) {
-    if (path.indexOf('/') === 0) {
-        return hostPrefix() + path.substring(1);
-    } else {
-        return hostPrefix() + path;
+    hostPrefix() {
+        if (hostname === 'localhost') {
+            return 'https://wisconregtest.bcholmes.org/';
+        } else {
+            return 'https://' + hostname + '/';
+        }
+    }
+    
+    serverUrl(path) {
+        if (path.indexOf('/') === 0) {
+            return this.hostPrefix() + path.substring(1);
+        } else {
+            return this.hostPrefix() + path;
+        }
+    }
+    
+    passwordResetUrl() {
+        if (isTestEnvironment()) {
+            return 'https://wiscontest.bcholmes.org/ForgotPassword.php';
+        } else {
+            return 'https://program.wiscon.net/ForgotPassword.php';
+        }
     }
 }
 
@@ -33,3 +44,5 @@ export function stripePublicKey() {
         return '';
     }
 }
+
+export const sdlc = new SdlcUtil();

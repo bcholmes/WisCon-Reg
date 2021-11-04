@@ -1,10 +1,11 @@
 import store from './store';
 import axios from 'axios';
+import { sdlc } from '../util/sdlcUtil';
 
 export const SET_OFFERINGS = 'SET_OFFERINGS';
 
 export function fetchOfferings() {
-    axios.get('https://wisconregtest.bcholmes.org/api/offering_list.php')
+    axios.get(sdlc.serverUrl('/api/offering_list.php'))
         .then(res => {
             store.dispatch(setOfferings(res.data));
         })

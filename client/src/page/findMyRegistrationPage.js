@@ -9,6 +9,7 @@ import Card from 'react-bootstrap/Card'
 import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
 import { isValidEmail } from '../util/emailUtil';
+import { sdlc } from '../util/sdlcUtil';
 
 class FindMyRegistrationPage extends Component {
 
@@ -72,7 +73,7 @@ class FindMyRegistrationPage extends Component {
     }
 
     submitFindMyRegistration() {
-        axios.post('https://wisconregtest.bcholmes.org/api/findRegistration.php', {
+        axios.post(sdlc.serverUrl('/api/find_registration.php'), {
             email: this.state.email
         })
         .then(res => {

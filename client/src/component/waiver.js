@@ -8,6 +8,7 @@ import Spinner from 'react-bootstrap/Spinner';
 
 import store from '../state/store';
 import { addStripeSecret, calculateTotal } from '../state/cartActions';
+import { sdlc } from '../util/sdlcUtil';
 
 class Waiver extends Component {
 
@@ -78,7 +79,7 @@ class Waiver extends Component {
     }
 
     processInitiatePayment(checkout) {
-        axios.post('https://wisconregtest.bcholmes.org/api/initiate_payment.php', {
+        axios.post(sdlc.serverUrl('/api/initiate_payment.php'), {
             "orderId": store.getState().cart.orderId,
             "amount": calculateTotal()
         })

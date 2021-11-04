@@ -14,6 +14,7 @@ import PageHeader from '../component/pageHeader';
 import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
 import { logout } from '../state/authActions';
+import { sdlc } from '../util/sdlcUtil';
 
 class RegistrationsPage extends Component {
 
@@ -156,7 +157,7 @@ class RegistrationsPage extends Component {
 
     async downloadReport() {
 
-        axios.get('https://wisconregtest.bcholmes.org/api/download_report.php', {
+        axios.get(sdlc.serverUrl('/api/download_report.php'), {
                 headers: {
                     "Authorization": "Bearer " + store.getState().auth.jwt
                 }
@@ -207,13 +208,13 @@ class RegistrationsPage extends Component {
 
     loadDataWithFilter(term) {
         if (term) {
-            this.loadDataWithUrl('https://wisconregtest.bcholmes.org/api/registrations_list.php?term=' + term);
+            this.loadDataWithUrl(sdlc.serverUrl('/api/registrations_list.php') + '?term=' + term);
         } else {
             this.loadData();
         }
     }
     loadData() {
-        this.loadDataWithUrl('https://wisconregtest.bcholmes.org/api/registrations_list.php');
+        this.loadDataWithUrl(sdlc.serverUrl('/api/registrations_list.php'));
     }
     loadDataWithUrl(url) {
         let state = this.state;
