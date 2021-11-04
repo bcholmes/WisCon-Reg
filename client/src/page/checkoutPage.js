@@ -17,11 +17,12 @@ import PageHeader from '../component/pageHeader';
 import Cart from '../component/cart';
 import Footer from '../component/footer';
 import { clearCart, calculateTotal } from '../state/cartActions';
-import {  isValidEmail } from '../util/emailUtil';
+import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
+import { stripePublicKey } from '../util/sdlcUtil';
 import store from '../state/store';
 
-const stripePromise = loadStripe('pk_test_51Ji4wMC2R9aJdAuoBn5Q1TasCjN2CFBlGLYK2aN50y1iJD7JRVEgG5AEhH6PvdQf32IYOCFfhvYavMMlBVq5atgn007JKQegmA');
+const stripePromise = loadStripe(stripePublicKey());
 
 export function StripeCheckoutForm(props) {
 
@@ -277,17 +278,27 @@ class CheckoutPage extends Component {
                 completion(res);
             });
         } else {
+            completion(false);
             this.setState({
                 ...this.state,
                 message: "Please provide a valid email address"
             });
-            completion();
         }
     }
 
     processCardPayment(stripe, card, completion) {
         this.processStripePaymentMethod(stripe, card, (res => {
-            this.processPayment('CARD', completion);
+            if (res && res.paymentIntent && res.paymentIntent.status === 'succeeded') {
+                this.processPayment('CARD', completion);
+            } else if (res) {
+                completion(false);
+                this.setState({
+                    ...this.state,
+                    message: "The payment did not succeed successfully. Check your information or try again with a different card."
+                });
+            } else {
+                completion(false);
+            }
         }));
     }
 }
