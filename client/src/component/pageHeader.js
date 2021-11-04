@@ -87,7 +87,7 @@ class PageHeader extends Component {
                     </Modal.Body>
                     <Modal.Footer>
                         <a href="https://wiscontest.bcholmes.org/ForgotPassword.php" className="btn btn-link" target="_blank" rel="noreferrer">Reset password</a>
-                        <Button variant="primary" onClick={() => this.processLogin()} disabled={!this.state.login.loginEnabled}>
+                        <Button type="submit" variant="primary" onClick={(e) => {e.preventDefault(); this.processLogin();}} disabled={!this.state.login.loginEnabled}>
                             Login
                         </Button>
                     </Modal.Footer>

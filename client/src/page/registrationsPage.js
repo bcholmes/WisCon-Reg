@@ -59,6 +59,7 @@ class RegistrationsPage extends Component {
         let rows = this.state.items ? this.state.items.map((item, i) => {
             return (<tr key={item.id + '-' + i}>
                 <td className="text-right">{item.id}</td>
+                <td><time dateTime={item.finalized_date}>{item.finalized_date_simple}</time></td>
                 <td>{item.title}</td>
                 <td className="text-right">{item.amount}</td>
                 <td>{item.for}</td>
@@ -86,7 +87,7 @@ class RegistrationsPage extends Component {
                 {warning}
                 <div className="row mb-3">
                     <div className="col-md-6">
-                        <Form>
+                        <Form onSubmit={(e) => e.preventDefault()}>
                             <Form.Group controlId="term">
                                 <Form.Label className="sr-only">Filter</Form.Label>
                                 <div className="input-group mb-3">
@@ -110,6 +111,7 @@ class RegistrationsPage extends Component {
                     <thead>
                         <tr>
                             <th className="text-right">Id</th>
+                            <th>Date</th>
                             <th>Purchase Item</th>
                             <th className="text-right">Amount</th>
                             <th>Name</th>

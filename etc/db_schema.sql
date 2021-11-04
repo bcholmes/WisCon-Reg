@@ -262,3 +262,12 @@ create table reg_order_item (
 );
 
 alter table reg_order add column payment_intent_id varchar(1024);
+
+alter table reg_order_item add column street_line_1 varchar(1024);
+alter table reg_order_item add column street_line_2 varchar(1024);
+alter table reg_order_item add column city varchar(255);
+alter table reg_order_item add column state_or_province varchar(255);
+alter table reg_order_item add column zip_or_postal_code varchar(255);
+alter table reg_order_item add column country varchar(1024);
+
+alter table reg_offering add column address_required char(1) not null default 'N';

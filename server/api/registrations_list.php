@@ -8,18 +8,23 @@ require_once("jwt_functions.php");
 $ini = read_ini();
 $conData = find_current_con($ini);
 
+function filter_clause($db, $term) {
+    $filterQuery = "";
+    if ($term) {
+        $id_clause = (is_numeric($term)) ? (" or o.id = " . $term) : "";
+        $termPhrase = '%' . mysqli_real_escape_string($db, strtolower($term)) . '%';
+        $filterQuery = "and (i.for_name like '" . $termPhrase . "' OR i.email_address like '" . $termPhrase 
+            . "' or o.confirmation_email like '" . $termPhrase . "'" . $id_clause . ")";
+    }
+    return $filterQuery;
+}
+
 function find_registrations($conData, $ini, $term, $page, $pageSize) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
     } else {
-        $filterQuery = "";
-        if ($term) {
-            $id_clause = (is_numeric($term)) ? (" or o.id = " . $term) : "";
-            $termPhrase = '%' . mysqli_real_escape_string($db, strtolower($term)) . '%';
-            $filterQuery = "and (i.for_name like '" . $termPhrase . "' OR i.email_address like '" . $termPhrase 
-                . "' or o.confirmation_email like '" . $termPhrase . "'" . $id_clause . ")";
-        }
+        $filterQuery = filter_clause($db, $term);
 
         $query = <<<EOD
     SELECT 
@@ -50,13 +55,18 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
                     "id" => $row->id, 
                     "confirmation_mail" => $row->confirmation_email,
                     "title" => $row->title,
-                    "finalized_date" => $row->finalized_date,
                     "paid" => ($row->status == 'PAID' ? "\"Yes\"" : "\"No\""),
                     "amount" => $row->amount,
                     "for" => $row->for_name,
                     "email_address" => $row->email_address,
                     "payment_method" => $row->payment_method
                 );
+                if ($row->finalized_date) {
+                    $date = date_create_from_format('Y-m-d H:i:s', $row->finalized_date);
+                    $current['finalized_date'] = date_format($date, 'c');
+                    $current['finalized_date_simple'] = date_format($date, 'M j H:i');
+//                    $current['finalized_date'] = $row->finalized_date;
+                }
                 array_push($items, $current);
             }
             mysqli_stmt_close($stmt);
@@ -69,11 +79,13 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
     }
 }
 
-function count_registrations($conData, $ini) {
+function count_registrations($conData, $ini, $term) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
     } else {
+        $filterQuery = filter_clause($db, $term);
+
         $query = <<<EOD
     SELECT 
             count(*) as row_count
@@ -87,6 +99,7 @@ function count_registrations($conData, $ini) {
                 i.offering_id = off.id
     WHERE o.con_id  = ?
         AND o.status in ('CHECKED_OUT', 'PAID')
+        $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
     EOD;
 
@@ -112,7 +125,7 @@ function count_registrations($conData, $ini) {
 
 $term = $_REQUEST['term'];
 
-$count = count_registrations($conData, $ini);
+$count = count_registrations($conData, $ini, $term);
 $items = find_registrations($conData, $ini, $term, 0, 100);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
