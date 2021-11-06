@@ -1,4 +1,7 @@
 export function formatAmount(amount, currency) {
+    if (typeof amount === 'string') {
+        amount = parseFloat(amount);
+    }
     let result = amount.toFixed(2);
     let prefix = (currency === 'USD' || currency === 'CAD') ? '$' : '';
     if (result.indexOf(".00") >= 0) {

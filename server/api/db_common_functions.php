@@ -75,6 +75,46 @@ function find_order_by_order_uuid($ini, $conData, $order_uuid) {
     }
 }
 
+function find_name_by_email_address($ini, $conData, $email_address) {
+    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
+    if (!$db) {
+        return false;
+    } else {
+        $query = <<<EOD
+ SELECT 
+        distinct i.for_name as name, count(*)
+   FROM 
+        reg_order o, reg_order_item i
+  WHERE 
+        o.id = i.order_id AND
+        i.email_address = ? AND
+        o.con_id  = ?
+  GROUP BY name
+  ORDER BY 2 desc, name;
+ EOD;
+
+        mysqli_set_charset($db, "utf8");
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "si", $email_address, $conData->id);
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            $name = false;
+            while ($row = mysqli_fetch_object($result)) {
+                $name = $row->name;
+                if ($name) {
+                    break;
+                }
+            }
+            mysqli_stmt_close($stmt);
+            mysqli_close($db);
+            return $name;
+        } else {
+            mysqli_close($db);
+            return false;
+        }
+    }
+}
+
 function create_order_with_order_uuid($ini, $conData, $order_uuid) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {

@@ -4,6 +4,7 @@
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("jwt_functions.php");
+require_once("format_functions.php");
 
 $ini = read_ini();
 $conData = find_current_con($ini);
@@ -20,6 +21,8 @@ function filter_clause($db, $term) {
 }
 
 function find_registrations($conData, $ini, $term, $page, $pageSize) {
+    $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
@@ -59,7 +62,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
                     "amount" => $row->amount,
                     "for" => $row->for_name,
                     "email_address" => $row->email_address,
-                    "payment_method" => $row->payment_method
+                    "payment_method" => format_payment_type_for_display($row->payment_method, $locale)
                 );
                 if ($row->finalized_date) {
                     $date = date_create_from_format('Y-m-d H:i:s', $row->finalized_date);

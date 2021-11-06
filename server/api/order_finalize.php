@@ -5,18 +5,13 @@
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("email_functions.php");
+require_once("format_functions.php");
 
 $ini = read_ini();
 
 $conData = find_current_con($ini);
 
-function compose_email($ini, $conData, $email_address, $payment_method, $order, $locale) {
-
-    $cheque = "cheque";
-    if ($locale === "en_US") {
-        $cheque = "check";
-    }
-
+function create_order_items_table($ini, $order, $email_address) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
         return false;
@@ -44,10 +39,7 @@ EOD;
             $result = mysqli_stmt_get_result($stmt);
 
             while ($row = mysqli_fetch_object($result)) {
-                $amount = $row->currency . " " . $row->amount;
-                if ($row->currency === 'USD' || $row->currency === 'CAD') {
-                    $amount = $row->currency . " $" . $row->amount;
-                }
+                $amount = format_monetary_amount($row->amount, $row->currency);
                 $currency = $row->currency;
 
                 $table_row = "<tr><td style=\"padding-right: 1rem;\">" . $row->title . "</td><td style=\"padding-right: 1rem;\">" . $row->for_name . "</td><td style=\"text-align: right\">" . $amount . "</td></tr>";
@@ -64,13 +56,26 @@ EOD;
             mysqli_close($db);
         }
 
-        $amount = $currency . " " . number_format($total, 2);
-        if ($currency === 'USD' || $currency === 'CAD') {
-            $amount = $currency . " $" . number_format($total, 2);
-        }
-
+        $amount = format_monetary_amount($total, $currency);
         $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
 
+        return array(
+            "lines" => $lines,
+            "addressee" => $addressee
+        );
+    }
+}
+
+function compose_email($ini, $conData, $email_address, $payment_method, $order, $locale) {
+
+    $cheque = "cheque";
+    if ($locale === "en_US") {
+        $cheque = "check";
+    }
+
+    $result = create_order_items_table($ini, $order, $email_address);
+
+    if ($result) {
         $reg_email = $ini['email']['reg_email'];
 
         $payment_text = "<p>You have chosen to pay for these items using a credit card.</p>";
@@ -86,10 +91,13 @@ EOD;
             $payment_text = <<<EOD
         <p>You have elected to pay for these items by mailing us a $cheque. Please mail your $cheque to:</p>
         <p>$reg_snail_mail</p>
+        <p>Please write your order number (Order #$order->id) on the $cheque to help us process your payment more easily.</p>
 EOD;
         }
 
         $to = $email_address;
+        $addressee = $result['addressee'];
+        $lines = $result['lines'];
         if (!$addressee) {
             $addressee = $email_address;
         } else {
@@ -103,6 +111,9 @@ EOD;
         <p>
             This email confirms your registration for 
             <b>$conData->name</b>.
+        </p>
+        <p>
+            Your order number is #<b>$order->id</b>.
         </p>
         $payment_text
         $lines
@@ -120,6 +131,8 @@ EOD;
 
         send_email($emailBody, $subject, $to);
         return true;
+    } else {
+        return false;
     }
 }
 

@@ -3,6 +3,7 @@
 
 require_once("config.php");
 require_once("db_common_functions.php");
+require_once("format_functions.php");
 require_once("jwt_functions.php");
 
 $ini = read_ini();
@@ -10,6 +11,7 @@ $conData = find_current_con($ini);
 
 $date = new DateTime();
 $formattedDate = date_format($date, 'Y-m-d-H.i.s');
+$locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
     http_response_code(401);
@@ -47,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(
             $result = mysqli_stmt_get_result($stmt);
             while ($row = mysqli_fetch_object($result)) {
                 echo "\"" . $row->id . "\",\"" . $row->confirmation_email . "\",\"" . $row->title . "\",\"" . $row->finalized_date . "\"," . 
-                    ($row->status == 'PAID' ? "\"Yes\"" : "\"No\"") . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" . $row->payment_method . "\"";
+                    ($row->status == 'PAID' ? "\"Yes\"" : "\"No\"") . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" . 
+                    format_payment_type_for_display($row->payment_method, $locale) . "\"";
                 echo "\n";
             }
             mysqli_stmt_close($stmt);
