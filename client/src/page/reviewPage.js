@@ -103,7 +103,7 @@ class ReviewPage extends Component {
     }
 
     fetchOrder(orderId, key) {
-        axios.get(sdlc.serverUrl('/api/review_order.php') + '?orderId=' + orderId + '&key' + key)
+        axios.get(sdlc.serverUrl('/api/review_order.php') + '?orderId=' + orderId + '&key=' + key)
             .then(res => {
                 this.setState({
                     loading: false,

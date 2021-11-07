@@ -34,4 +34,10 @@ function format_payment_type_for_display($payment_type, $locale) {
     }
 }
 
+function create_order_key($order_id, $order_uuid, $confirmation_email) {
+    $key = '' . $order_id . '||' . $order_uuid . '||' . $confirmation_email;
+    $key = substr( hash('sha256', $key), -12);
+    return $key;
+}
+
 ?>

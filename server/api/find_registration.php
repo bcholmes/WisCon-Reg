@@ -5,6 +5,7 @@
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("email_functions.php");
+require_once("format_functions.php");
 
 $ini = read_ini();
 
@@ -36,8 +37,8 @@ function create_order_review_email($ini, $email_address, $con_name, $orders, $ho
     $reg_email = $ini['email']['reg_email'];
     $list = '';
     foreach ($orders as $value) {
-        $key = '' . $value['order_id'] . '||' . $value['order_uuid'] . '||' . $value['confirmation_email'];
-        $order_url = 'https://' . $hostName . '/review?orderId=' . $value['order_uuid'] . '&key=' . hash('sha256', $key);
+        $key = create_order_key($value['order_id'], $value['order_uuid'], $value['confirmation_email']);
+        $order_url = 'https://' . $hostName . '/review?orderId=' . $value['order_uuid'] . '&key=' . $key;
         $list = $list . '<li><a href="' . $order_url . '">' . $order_url . '</a></li>';
     }
 

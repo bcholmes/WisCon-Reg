@@ -101,13 +101,23 @@ function find_order_and_items_by_order_uuid($ini, $conData, $order_uuid, $locale
     }
 }
 
+function validate_key($order, $key) {
+    $valid_key = create_order_key($order['orderId'], $order['orderUuid'], $order['confirmationEmail']);
+    if (strlen($key) > 12) {
+        $key = substr($key, -12);
+    }
+    return $valid_key === $key;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $order = find_order_and_items_by_order_uuid($ini, $conData, $order_uuid, $locale);
     // TODO check key
-    if ($order) {
+    if ($order && validate_key($order, $key)) {
         $json_string = json_encode($order);
         echo $json_string;
+    } else if ($order) {
+        http_response_code(400);
     } else if ($order === null) {
         http_response_code(404);
     } else {
