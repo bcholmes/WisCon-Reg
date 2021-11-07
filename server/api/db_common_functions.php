@@ -171,6 +171,33 @@ function mark_order_as_finalized($ini, $order_id, $payment_method, $email_addres
     }
 }
 
+function mark_order_as_paid($ini, $order_id) {
+    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
+    if (!$db) {
+        return false;
+    } else {
+        $query = <<<EOD
+ UPDATE reg_order
+    SET payment_date = now(),
+        status = 'PAID'
+  WHERE id = ?;
+ EOD;
+
+        mysqli_set_charset($db, "utf8");
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $order_id);
+
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+            mysqli_close($db);
+            return true;
+        } else {
+            mysqli_close($db);
+            return false;
+        }
+    }
+}
+
 function boolean_value_from($value) {
     if ($value == null) {
         return null;
@@ -188,8 +215,9 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
     } else {
         $query = <<<EOD
  INSERT
-        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, offering_id)
- SELECT ?, ?, ?, ?, ?, ?, ?, ?, o.id
+        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, 
+        street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id)
+ SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, o.id
    from reg_offering o
  where  o.id = ?
    and  o.con_id = ?;
@@ -197,10 +225,17 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
 
         mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "isssdsssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
+        mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
             boolean_value_from($values->newsletter),
             boolean_value_from($values->volunteer),
             boolean_value_from($values->snailMail),
+            $values->streetLine1,
+            $values->streetLine2,
+            $values->city,
+            $values->stateOrProvince,
+            $values->country,
+            $values->zipOrPostalCode,
+            $values->age,
             $offering->id, $conData->id);
 
         if ($stmt->execute()) {

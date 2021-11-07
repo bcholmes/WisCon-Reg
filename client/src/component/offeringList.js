@@ -132,7 +132,7 @@ class OfferingList extends Component {
                 </Form.Group>);
             } else if (this.isVariableAmount(this.state.selectedOffering)) {
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
-                    <Form.Label className="sr-only">Name</Form.Label>
+                    <Form.Label className="sr-only">Amount</Form.Label>
                     <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
                     <Form.Text className="text-muted">
                         The suggested price for this item ({this.state.selectedOffering.title}) is {formatAmount(this.state.selectedOffering.suggestedPrice, this.state.selectedOffering.currency)}.
@@ -155,6 +155,13 @@ class OfferingList extends Component {
                 ]
                 : undefined;
 
+            let ageField = (this.isAgeRequired()) ? (<Form.Group className="mb-3" controlId="age">
+            <Form.Label className="sr-only">Age</Form.Label>
+            <Form.Control type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
+            <Form.Text className="text-muted">
+                Please tell us how old the child is as of Memorial Day 2022.
+            </Form.Text>
+        </Form.Group>) : undefined;
 
             let addressFields = (this.isAddressRequired()) 
                 ? [
@@ -468,6 +475,7 @@ class OfferingList extends Component {
                                 </Form.Group>
                                 {emailOption}
                                 {amountEntry}
+                                {ageField}
 
                                 {questions}
                                 {addressFields}
@@ -488,6 +496,15 @@ class OfferingList extends Component {
         let offering = this.state.selectedOffering;
         if (offering) {
             return offering.addressRequired || this.state.values['snailMail'];
+        } else {
+            return false;
+        }
+    }
+
+    isAgeRequired() {
+        let offering = this.state.selectedOffering;
+        if (offering) {
+            return offering.ageRequired;
         } else {
             return false;
         }

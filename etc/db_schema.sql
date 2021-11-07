@@ -286,3 +286,9 @@ insert into reg_offering_highlight
 select max(id),
 1, 'Online Access to Streamed Events'
 from reg_offering;
+
+alter table reg_offering add column age_required char(1) not null default 'N';
+
+update reg_offering set age_required = 'Y' where title = 'WisCon Child Care';
+
+alter table reg_order_item add column age varchar(255);

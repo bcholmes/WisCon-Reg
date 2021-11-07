@@ -15,7 +15,7 @@ function find_offerings($conData, $db_ini) {
         $query = <<<EOD
  SELECT 
         o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
-        o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required
+        o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required, o.age_required
    FROM 
         reg_offering o 
   LEFT OUTER JOIN reg_offering_highlight h
@@ -58,6 +58,7 @@ function find_offerings($conData, $db_ini) {
                         "emphasis" => ("Y" == $row->emphasis ? true : false),
                         "addPrompts" => ("Y" == $row->add_prompts ? true : false),
                         "addressRequired" => ("Y" == $row->address_required ? true : false),
+                        "ageRequired" => ("Y" == $row->age_required ? true : false),
                     );
                 }
                 if ($row->highlight_text) {

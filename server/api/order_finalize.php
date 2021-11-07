@@ -2,6 +2,8 @@
 // Copyright (c) 2021 BC Holmes. All rights reserved. See copyright document for more details.
 // This function supports order finalization functionality
 
+require_once('../vendor/autoload.php');
+
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("email_functions.php");
@@ -65,6 +67,35 @@ EOD;
         );
     }
 }
+
+
+function process_stripe_status($ini, $order, $paymentMethod) {
+    // Set your secret key. Remember to switch to your live secret key in production.
+    // See your keys here: https://dashboard.stripe.com/apikeys
+
+
+    if ($paymentMethod === 'CARD') {
+        \Stripe\Stripe::setApiKey(
+            $ini['stripe']['secret_key']
+        );
+    
+        $payment_intent = \Stripe\PaymentIntent::retrieve($order->payment_intent_id, []);
+        if ($payment_intent->status === 'succeeded') {
+            return mark_order_as_paid($ini, $order);
+        } else {
+            return false;
+        }
+    } else if ($order->payment_intent_id) {
+        $stripe = new \Stripe\StripeClient(
+            $ini['stripe']['secret_key']
+        );
+        $stripe->paymentIntents->cancel($order->payment_intent_id, []);
+        return true;
+    } else {
+        return true;
+    }
+}
+
 
 function compose_email($ini, $conData, $email_address, $payment_method, $order, $locale) {
 
@@ -155,8 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($order) {
                 if (mark_order_as_finalized($ini, $order->id, $data->paymentMethod, $data->email)) {
-                    if (compose_email($ini, $conData, $data->email, $data->paymentMethod, $order, $locale)) {
-                        http_response_code(201);
+                    if (process_stripe_status($ini, $order, $data->paymentMethod)) {
+                        if (compose_email($ini, $conData, $data->email, $data->paymentMethod, $order, $locale)) {
+                            http_response_code(201);
+                        } else {
+                            http_response_code(500);
+                        }
                     } else {
                         http_response_code(500);
                     }
