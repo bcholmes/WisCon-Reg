@@ -68,10 +68,7 @@ EOD;
 
 function compose_email($ini, $conData, $email_address, $payment_method, $order, $locale) {
 
-    $cheque = "cheque";
-    if ($locale === "en_US") {
-        $cheque = "check";
-    }
+    $cheque = format_payment_type_for_display('CHEQUE', $locale);
 
     $result = create_order_items_table($ini, $order, $email_address);
 
@@ -84,6 +81,11 @@ function compose_email($ini, $conData, $email_address, $payment_method, $order, 
         <p>You have elected to pay for these items in cash at the registration desk. Your membership 
         will be ready for pick-up, but the final balance must be paid at that time.</p>
 EOD;
+        } else if ($payment_method === 'NO_CHARGE') {
+            $payment_text = <<<EOD
+        <p>Because you've only selected free items, your order does not require payment.</p>
+EOD;
+
         } else if ($payment_method === 'CHEQUE') {
             $reg_snail_mail = $ini['email']['reg_snail_mail'];
             $reg_snail_mail = str_replace("\n", "<br />", $reg_snail_mail);
@@ -91,7 +93,8 @@ EOD;
             $payment_text = <<<EOD
         <p>You have elected to pay for these items by mailing us a $cheque. Please mail your $cheque to:</p>
         <p>$reg_snail_mail</p>
-        <p>Please write your order number (Order #$order->id) on the $cheque to help us process your payment more easily.</p>
+        <p>Please write your order number (Order #$order->id) on the $cheque or send the $cheque with a printed copy of this
+           email to help us process your payment more easily.</p>
 EOD;
         }
 

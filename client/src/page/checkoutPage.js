@@ -94,83 +94,13 @@ class CheckoutPage extends Component {
     }
 
     render() {
-        const total = formatTotal();
-        let message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
-        const options = {
-            clientSecret: store.getState().cart.clientSecret
-        };
+        const total = calculateTotal();
+        const section = (total.amount === 0) ? this.renderNoPaymentRequired() : this.renderPaymentMethods();
         return (
             <Container className="mx-auto">
                 <PageHeader />
                 <div className="row">
-                    <section className="col-lg-9">
-                        <h1>Checkout</h1>
-
-                        {message}
-
-                        <Form>
-                            <Form.Group className="mb-3" controlId="formBasicEmail">
-                                <Form.Label>Send confirmation to:</Form.Label>
-                                <Form.Control type="email" placeholder="Email address..." value={this.state.email} onChange={(e) => this.saveEmail(e.target.value)} />
-                                <Form.Text className="text-muted">
-                                    We'll never share your email with anyone outside of WisCon.
-                                </Form.Text>
-                            </Form.Group>
-                        </Form>
-
-                        <p>Choose your preferred payment method and complete your registration.</p>
-                        <Accordion defaultActiveKey="0">
-                            <Card>
-                                <Accordion.Toggle as={Card.Header} variant="link" eventKey="0">
-                                    Pay using Credit Card
-                                </Accordion.Toggle>
-                                <Accordion.Collapse eventKey="0">
-                                    <Card.Body>
-
-                                        <Elements stripe={stripePromise} options={options}>
-                                            <StripeCheckoutForm onSubmit={(stripe, card, completion) => this.processCardPayment(stripe, card, completion)}/>
-                                        </Elements>
-
-                                    </Card.Body>
-
-                                </Accordion.Collapse>
-                            </Card>
-                            <Card>
-                                <Accordion.Toggle as={Card.Header}  variant="link" eventKey="1">
-                                    Pay with Check
-                                </Accordion.Toggle>
-                                <Accordion.Collapse eventKey="1">
-                                    <Card.Body>
-                                        <p>Please make your check for {total} payable to SF3 and mail it to the following address:</p>
-
-                                        <p>
-                                            WisCon Registration<br />
-                                            123 Main St.<br />
-                                            Madison, WI, 12345<br />
-                                            USA
-                                        </p>
-
-                                        <Button onClick={() => this.processPayment('CHEQUE')}>Pay by check</Button>
-                                    </Card.Body>
-                                </Accordion.Collapse>
-                            </Card>
-                            <Card>
-                                <Accordion.Toggle as={Card.Header}  variant="link" eventKey="2">
-                                    Pay at Door with Cash
-                                </Accordion.Toggle>
-                                <Accordion.Collapse eventKey="2">
-                                    <Card.Body>
-                                        <p>If you choose to pay at the door, your membership will be reserved. If we approach the 
-                                            membership cap, we may contact you to ask that you confirm that you still plan to 
-                                            attend. At the convention, you will need to pay in full ({total}) when picking up 
-                                            your badge(s) and/or dessert ticket(s).</p>
-
-                                        <Button onClick={() => this.processPayment('CASH')}>Pay at door</Button>
-                                    </Card.Body>
-                                </Accordion.Collapse>
-                            </Card>
-                        </Accordion>
-                    </section>
+                    {section}
                     <section className="col-lg-3">
                         <Cart />
                     </section>
@@ -196,6 +126,113 @@ class CheckoutPage extends Component {
                     </Modal.Footer>
                 </Modal>
             </Container>
+
+        )
+    }
+
+    renderNoPaymentRequired() {
+        const total = formatTotal();
+        let message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
+        return (
+            <section className="col-lg-9">
+                <h1>Checkout</h1>
+
+                {message}
+
+                <p>Good news! Your cart totals the low, low amount of {total}, and therefore no payment is required. 
+                    But you <b>do</b> need to click the "Confirm" button to finalize your order.</p>
+
+
+                <Form>
+                    <Form.Group className="mb-3" controlId="formBasicEmail">
+                        <Form.Label>Send confirmation to:</Form.Label>
+                        <Form.Control type="email" placeholder="Email address..." value={this.state.email} onChange={(e) => this.saveEmail(e.target.value)} />
+                        <Form.Text className="text-muted">
+                            We'll never share your email with anyone outside of WisCon.
+                        </Form.Text>
+                    </Form.Group>
+                </Form>
+
+                <p><Button onClick={() => this.processPayment('NO_CHARGE')}>Confirm</Button></p>
+            </section>
+        )
+    }
+
+    renderPaymentMethods() {
+        const total = formatTotal();
+        let message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
+        const options = {
+            clientSecret: store.getState().cart.clientSecret
+        };
+        return (
+            <section className="col-lg-9">
+                <h1>Checkout</h1>
+
+                {message}
+
+                <Form>
+                    <Form.Group className="mb-3" controlId="formBasicEmail">
+                        <Form.Label>Send confirmation to:</Form.Label>
+                        <Form.Control type="email" placeholder="Email address..." value={this.state.email} onChange={(e) => this.saveEmail(e.target.value)} />
+                        <Form.Text className="text-muted">
+                            We'll never share your email with anyone outside of WisCon.
+                        </Form.Text>
+                    </Form.Group>
+                </Form>
+
+                <p>Choose your preferred payment method and complete your registration.</p>
+                <Accordion defaultActiveKey="0">
+                    <Card>
+                        <Accordion.Toggle as={Card.Header} variant="link" eventKey="0">
+                            Pay using Credit Card
+                        </Accordion.Toggle>
+                        <Accordion.Collapse eventKey="0">
+                            <Card.Body>
+
+                                <Elements stripe={stripePromise} options={options}>
+                                    <StripeCheckoutForm onSubmit={(stripe, card, completion) => this.processCardPayment(stripe, card, completion)}/>
+                                </Elements>
+
+                            </Card.Body>
+
+                        </Accordion.Collapse>
+                    </Card>
+                    <Card>
+                        <Accordion.Toggle as={Card.Header}  variant="link" eventKey="1">
+                            Pay with Check
+                        </Accordion.Toggle>
+                        <Accordion.Collapse eventKey="1">
+                            <Card.Body>
+                                <p>Please make your check for {total} payable to SF3 and mail it to the following address:</p>
+
+                                <p>
+                                    WisCon Registration<br />
+                                    123 Main St.<br />
+                                    Madison, WI, 12345<br />
+                                    USA
+                                </p>
+
+                                <Button onClick={() => this.processPayment('CHEQUE')}>Pay by check</Button>
+                            </Card.Body>
+                        </Accordion.Collapse>
+                    </Card>
+                    <Card>
+                        <Accordion.Toggle as={Card.Header}  variant="link" eventKey="2">
+                            Pay at Door with Cash
+                        </Accordion.Toggle>
+                        <Accordion.Collapse eventKey="2">
+                            <Card.Body>
+                                <p>If you choose to pay at the door, your membership will be reserved. If we approach the 
+                                    membership cap, we may contact you to ask that you confirm that you still plan to 
+                                    attend. At the convention, you will need to pay in full ({total}) when picking up 
+                                    your badge(s) and/or dessert ticket(s).</p>
+
+                                <Button onClick={() => this.processPayment('CASH')}>Pay at door</Button>
+                            </Card.Body>
+                        </Accordion.Collapse>
+                    </Card>
+                </Accordion>
+            </section>
         );
     }
 

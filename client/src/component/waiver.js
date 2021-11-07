@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
@@ -30,12 +31,15 @@ class Waiver extends Component {
             aria-hidden="true"
         />) : undefined;
 
+        const message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
+
         return (
             <Modal show={this.props.show} onHide={() => this.handleClose(false)} size="lg">
                 <Modal.Header closeButton>
                 <Modal.Title>Code of Conduct</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {message}
                     <p>WisCon is dedicated to working towards a harassment-free convention experience for all members, regardless of gender, gender identity and expression, sexual orientation, disability, physical appearance, body size, race, ethnicity, age, origin, or religion. We do not tolerate harassment of WisCon members in any form. Convention participants violating these rules may be sanctioned or expelled from the convention without a refund at the discretion of the convention organizers.</p>
                     <p>Our anti-harassment policy can be found at: <a href="https://wiscon.net/policies/anti-harassment/code-of-conduct/" target="_blank" rel="noreferrer">https://wiscon.net/policies/anti-harassment/code-of-conduct/</a>.</p>
                     <p>We are guided by our Statement of Principles, which can be found here: <a href="http://wiscon.net/policies/principles/" target="_blank" rel="noreferrer">http://wiscon.net/policies/principles/</a>.</p>
@@ -66,7 +70,12 @@ class Waiver extends Component {
     }
 
     handleClose(checkout) {
-        if (checkout) {
+        const total = calculateTotal();
+        if (checkout && total.amount === 0) {
+            if (this.props.onClose) {
+                this.props.onClose(true);
+            }
+        } else if (checkout) {
             this.setState({
                 loading: true 
             })
