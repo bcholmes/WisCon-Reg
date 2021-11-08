@@ -41,7 +41,7 @@ class FindMyRegistrationPage extends Component {
                         <p>Provide the email address that you used to register, and we'll send you an email with a link to your registration details.</p>
                         <div className="row mt-4">
 
-                            <Form className="col-md-5">
+                            <Form className="col-md-5" onSubmit={(e) => e.preventDefault()}>
                                 <Form.Group controlId="formBasicEmail">
                                     <Form.Label className="sr-only">Email address</Form.Label>
                                     <Form.Control type="email" placeholder="Email" value={this.state.email} onChange={(e) => this.setEmail(e.target.value)}/>
@@ -51,7 +51,7 @@ class FindMyRegistrationPage extends Component {
                                 </Form.Group>
 
                                 <div className="text-center">
-                                    <Button variant="primary" onClick={() => this.submitFindMyRegistration()} disabled={!this.state.submitEnabled}>
+                                    <Button variant="primary" onClick={(e) => this.submitFindMyRegistration(e)} disabled={!this.state.submitEnabled}>
                                         Email me
                                     </Button>
                                 </div>
@@ -72,7 +72,8 @@ class FindMyRegistrationPage extends Component {
         })
     }
 
-    submitFindMyRegistration() {
+    submitFindMyRegistration(e) {
+        e.preventDefault();
         axios.post(sdlc.serverUrl('/api/find_registration.php'), {
             email: this.state.email
         })

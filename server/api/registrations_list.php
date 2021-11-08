@@ -31,7 +31,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
 
         $query = <<<EOD
     SELECT 
-            o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title
+            o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title
     FROM 
             reg_order o
     LEFT OUTER JOIN reg_order_item i
@@ -57,6 +57,8 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
                 $current = array(
                     "id" => $row->id, 
                     "confirmation_mail" => $row->confirmation_email,
+                    "orderUuid" => $row->order_uuid,
+                    "key" => create_order_key($row->id, $row->order_uuid, $row->confirmation_email),
                     "title" => $row->title,
                     "paid" => ($row->status == 'PAID' ? "\"Yes\"" : "\"No\""),
                     "amount" => $row->amount,

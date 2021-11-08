@@ -6,6 +6,7 @@ import Alert from 'react-bootstrap/Alert';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
 import Spinner from 'react-bootstrap/Spinner';
 import download from 'downloadjs';
 
@@ -15,6 +16,7 @@ import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
 import { logout } from '../state/authActions';
 import { sdlc } from '../util/sdlcUtil';
+import OrderSummary from '../component/orderSummary';
 
 class RegistrationsPage extends Component {
 
@@ -58,7 +60,7 @@ class RegistrationsPage extends Component {
         }
 
         let rows = this.state.items ? this.state.items.map((item, i) => {
-            return (<tr key={item.id + '-' + i}>
+            return (<tr key={item.id + '-' + i}  onClick={() => {this.openOrder(item)}} role="button">
                 <td className="text-right">{item.id}</td>
                 <td><time dateTime={item.finalized_date}>{item.finalized_date_simple}</time></td>
                 <td>{item.title}</td>
@@ -124,9 +126,42 @@ class RegistrationsPage extends Component {
                         {rows}
                     </tbody>
                 </table>
+
+                <Modal show={this.state.showModal}  onHide={() => this.handleClose()} size="lg">
+                    <Modal.Header closeButton>
+                    <Modal.Title>Order Review</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <OrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} />
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="primary" onClick={() => this.handleClose()}>
+                            OK
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
                 <Footer />
             </Container>
         );
+    }
+
+    openOrder(orderItem) {
+        console.log("open order");
+        this.setState({
+            ...this.state,
+            showModal: true,
+            orderId: orderItem.orderUuid,
+            orderKey: orderItem.key
+        });
+    }
+
+    handleClose() {
+        this.setState({
+            ...this.state,
+            showModal: false,
+            orderId: undefined,
+            orderKey: undefined
+        })
     }
 
     getTerm() {

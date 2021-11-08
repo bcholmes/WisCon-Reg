@@ -1,17 +1,12 @@
 import React, { Component } from 'react';
 
-import axios from 'axios';
-
-import Alert from 'react-bootstrap/Alert';
 import Container from 'react-bootstrap/Container';
-import Spinner from 'react-bootstrap/Spinner';
 
 import { withRouter } from "react-router";
 
 import PageHeader from '../component/pageHeader';
 import Footer from '../component/footer';
-import { sdlc } from '../util/sdlcUtil';
-import {formatAmount} from '../util/numberUtil';
+import OrderSummary from '../component/orderSummary';
 
 class ReviewPage extends Component {
 
@@ -19,105 +14,23 @@ class ReviewPage extends Component {
         super(props);
 
         const search = props.location.search;  
-        const orderId = new URLSearchParams(search).get('orderId');
         const key = new URLSearchParams(search).get('key');
-
+console.log("key: " + key);
         this.state = {
-            loading: true
-        };
-        this.fetchOrder(orderId, key);
+            "orderId": new URLSearchParams(search).get('orderId'),
+            "key": key
+        }
     }
 
     render() {
-        let content = undefined;
-        if (this.state.loading) {
-            content = (
-                    <div className="text-center">
-                        <Spinner animation="border" />
-                    </div>
-            );
-        } else if (this.state.message) {
-            content = (
-                <Alert variant="danger">{this.state.message}</Alert>
-            );
-        } else if (this.state.order) {
-            let total = 0;
-            let currency = 'USD';
-            let rows = this.state.order.items ? this.state.order.items.map((item, i) => {
-                total += item.amount;
-                currency = item.currency;
-                return (<tr key={i}>
-                    <td>{item.title}</td>
-                    <td>{item.for}</td>
-                    <td>{item.emailAddress}</td>
-                    <td className="text-right"><small className="text-muted">{item.currency}</small> {formatAmount(item.amount, item.currency)}</td>
-                </tr>)
-            }) : undefined;
-            content = (
-                <section>
-                    <h1>Order Number #{this.state.order.orderId}</h1>
-                    <table className="mb-3">
-                        <tr>
-                            <th className="pr-2">Order Date: </th><td> <time dateTime={this.state.order.finalizedDate}>{this.state.order.finalizedDateSimple}</time></td>
-                        </tr><tr>
-                            <th className="pr-2">Payment method: </th><td> {this.state.order.paymentMethod}</td>
-                        </tr><tr>
-                            <th className="pr-2">Confirmation email: </th><td> {this.state.order.confirmationEmail}</td>
-                        </tr>
-                    </table>
-
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>For</th>
-                                <th>Email</th>
-                                <th className="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3"><b>Total</b></td>
-                                <td className="text-right"><small className="text-muted">{currency}</small> <b>{formatAmount(total, currency)}</b></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </section>
-            );
-        } else {
-            content = (
-                <Alert variant="danger">Whoa! I don't know how we got here, but something really odd happened, and everything's broken.</Alert>
-            );
-        }
 
         return (
             <Container className="mx-auto">
                 <PageHeader />
-                    {content}
+                <OrderSummary orderId={this.state.orderId} orderKey={this.state.key} />
                 <Footer />
             </Container>
         );
-    }
-
-    fetchOrder(orderId, key) {
-        axios.get(sdlc.serverUrl('/api/review_order.php') + '?orderId=' + orderId + '&key=' + key)
-            .then(res => {
-                this.setState({
-                    loading: false,
-                    message: undefined, 
-                    order: res.data
-                })
-            })
-            .catch(error => {
-                let message = "There was an error trying to get the specified order."
-                this.setState({
-                    loading: false,
-                    message: message
-                })
-            });
     }
 }
 
