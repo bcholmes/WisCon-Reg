@@ -28,6 +28,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
         return false;
     } else {
         $filterQuery = filter_clause($db, $term);
+        $start = $page * $pageSize;
 
         $query = <<<EOD
     SELECT 
@@ -44,6 +45,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
         AND o.status in ('CHECKED_OUT', 'PAID')
         $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
+    LIMIT $start, $pageSize
     EOD;
 
         mysqli_set_charset($db, "utf8");
@@ -128,22 +130,49 @@ function count_registrations($conData, $ini, $term) {
     }
 }
 
+function determine_links($baseUrl, $items, $count, $PAGE_SIZE) {
+    $links = array();
+    if (count($items) < $count) {
+        $totalPages = floor(($count + $PAGE_SIZE - 1) / $PAGE_SIZE);
+        $links['start'] = $baseUrl . 'page=0';
+        $links['end'] = $baseUrl . 'page=' . ($totalPages -1);
+
+        for ($i = 0; $i < $totalPages; $i++) {
+            $links[$i+1] = $baseUrl . 'page=' . $i;
+        }
+    }
+    return $links;
+}
+
+$PAGE_SIZE = 50;
 $term = $_REQUEST['term'];
+$page = $_REQUEST['page'];
+if (!$page) {
+    $page = 0;
+} else {
+    $page = ctype_digit($page) ? intval($page) : 0;
+}
 
 $count = count_registrations($conData, $ini, $term);
-$items = find_registrations($conData, $ini, $term, 0, 100);
+$items = find_registrations($conData, $ini, $term, $page, $PAGE_SIZE);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
     http_response_code(401);
 } else if ($items === false) {
     http_response_code(500);
 } else {
+    $baseUrl = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'] . '/api/registrations_list.php?';
+    if ($term) {
+        $baseUrl = $baseUrl . 'term=' . urlencode($term) . '&';
+    }
     $result = array( "items" => $items, 
         "pagination" => array(
             "start" => (count($items) > 0 ? 1 : 0),
             "end" => count($items),
+            "page" => $page,
             "totalRows" => $count
-        )
+        ),
+        "links" => determine_links($baseUrl, $items, $count, $PAGE_SIZE)
     );
     $json_string = json_encode($result);
     echo $json_string;

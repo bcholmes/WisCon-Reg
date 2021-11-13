@@ -82,6 +82,15 @@ class RegistrationsPage extends Component {
                 </div>
         ) : undefined;
 
+        let links = this.renderLinks();
+        let linkFooter = links ? (<tfoot>
+                <tr>
+                    <td colSpan="7">
+                        {links}
+                    </td>
+                </tr>
+            </tfoot>) : undefined;
+
         return (
             <Container className="mx-auto">
                 <PageHeader />
@@ -125,6 +134,7 @@ class RegistrationsPage extends Component {
                     <tbody>
                         {rows}
                     </tbody>
+                    {linkFooter}
                 </table>
 
                 <Modal show={this.state.showModal}  onHide={() => this.handleClose()} size="lg">
@@ -143,6 +153,35 @@ class RegistrationsPage extends Component {
                 <Footer />
             </Container>
         );
+    }
+
+    renderLinks() {
+        if (this.state.links) {
+            let orderedLinks = [];
+            if (this.state.links['start']) {
+                orderedLinks.push({ name: '«', link: this.state.links['start'] });
+            }
+            for (let i = 1; true; i++) {
+                if (this.state.links[i]) {
+                    orderedLinks.push({ name: '' + i, link: this.state.links['' + i] });
+                } else {
+                    break;
+                }
+            }
+            if (this.state.links['end']) {
+                orderedLinks.push({ name: '»', link: this.state.links['end'] });
+            }
+            let items = orderedLinks.map((link, i) => {
+                let active = (this.state.pagination && this.state.pagination.page != null) 
+                    ? (((this.state.pagination.page + 1).toString()) === link['name'] ? "active" : "") 
+                    : "";
+                let pageItemClass = "page-item " + active;
+                return (<li className={pageItemClass}><a className="page-link" href="#" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
+            });
+            return (<ul className="pagination">{items}</ul>);
+        } else {
+            return undefined;
+        }
     }
 
     openOrder(orderItem) {
@@ -182,12 +221,14 @@ class RegistrationsPage extends Component {
     }
 
     fastExecuteFilter() {
-        let state = this.state;
         this.setState({
-            ...state,
+            ...this.state,
             term: ''
-        })
-        this.loadData();
+        });
+        this.timeout = setTimeout(() => {
+            this.loadData();
+            this.timeout = undefined;
+        }, 250);
     }
 
     async downloadReport() {
@@ -271,7 +312,8 @@ class RegistrationsPage extends Component {
                     loading: false,
                     message: null,
                     items: res.data.items,
-                    pagination: res.data.pagination
+                    pagination: res.data.pagination,
+                    links: res.data.links
                 })
             })
             .catch(error => {

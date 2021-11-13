@@ -39,7 +39,7 @@ class OrderSummary extends Component {
 
             for (let i = 0; i < this.state.order.items.length; i++) {
                 const item = this.state.order.items[i];
-                total += (parseFloat(item.amount));
+                total += (parseFloat(item.amount) || 0);
                 currency = item.currency;
             }
 
