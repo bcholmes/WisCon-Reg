@@ -11,7 +11,9 @@ class Welcome extends Component {
                 <a href="https://wiscon.net/register/" target="_blank" rel="noreferrer"> https://wiscon.net/register/</a>.</p>
             <Alert variant="info">
                 <h5 className="alert-heading">Proof of Vaccination Required</h5>
-                <p>You will be required to show documentation of COVID vaccination to attend.</p>
+                <p>All attendees, including children, must show documentation of COVID vaccination to attend. Unvaccinated 
+                    individuals, including children too young to be vaccinated, will not be able to attend WisCon 2022 
+                    in person.</p>
             </Alert>
         </div>);
     }

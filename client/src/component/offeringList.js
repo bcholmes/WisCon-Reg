@@ -109,7 +109,7 @@ class OfferingList extends Component {
             }
             let emailOption =  (<Form.Group controlId="formEmail" key="email-field">
                 <Form.Label className="sr-only">{emailLabel}</Form.Label>
-                <Form.Control type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
+                <Form.Control className={this.getErrorClass('email')} type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
                 <Form.Text className="text-muted">
                     Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
                     sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
@@ -124,8 +124,8 @@ class OfferingList extends Component {
             let amountEntry = undefined;
             if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null) {
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
-                    <Form.Label className="sr-only">Name</Form.Label>
-                    <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
+                    <Form.Label className="sr-only">Amount</Form.Label>
+                    <Form.Control className={this.getErrorClass('amount')} type="text" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue('amount', e.target.value)}/>
                     <Form.Text className="text-muted">
                         Please choose the amount you wish provide for this item.
                     </Form.Text>
@@ -133,7 +133,7 @@ class OfferingList extends Component {
             } else if (this.isVariableAmount(this.state.selectedOffering)) {
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
                     <Form.Label className="sr-only">Amount</Form.Label>
-                    <Form.Control type="number" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue("amount", e.target.value)}/>
+                    <Form.Control className={this.getErrorClass('amount')} type="text" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue('amount', e.target.value)}/>
                     <Form.Text className="text-muted">
                         The suggested price for this item ({this.state.selectedOffering.title}) is {formatAmount(this.state.selectedOffering.suggestedPrice, this.state.selectedOffering.currency)}.
                         Please choose an amount between {formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency)} and {formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency)}.
@@ -157,7 +157,7 @@ class OfferingList extends Component {
 
             let ageField = (this.isAgeRequired()) ? (<Form.Group className="mb-3" controlId="age">
             <Form.Label className="sr-only">Age</Form.Label>
-            <Form.Control type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
+            <Form.Control className={this.getErrorClass('age')} type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
             <Form.Text className="text-muted">
                 Please tell us how old the child is as of Memorial Day 2022.
             </Form.Text>
@@ -167,7 +167,7 @@ class OfferingList extends Component {
                 ? [
                     <Form.Group controlId="streetLine1" key="streetLine1">
                         <Form.Label className="sr-only">Street Line 1</Form.Label>
-                        <Form.Control type="text" placeholder="Street line 1" value={this.getFormValue('streetLine1')} onChange={(e) => this.setFormValue("streetLine1", e.target.value)}/>
+                        <Form.Control className={this.getErrorClass('streetLine1')} type="text" placeholder="Street line 1" value={this.getFormValue('streetLine1')} onChange={(e) => this.setFormValue("streetLine1", e.target.value)}/>
                     </Form.Group>,
                     <Form.Group controlId="streetLine2" key="streetLine2">
                         <Form.Label className="sr-only">Street Line 2 (Optional)</Form.Label>
@@ -177,19 +177,19 @@ class OfferingList extends Component {
                         <div className="col-md-4">
                             <Form.Group controlId="city">
                                 <Form.Label className="sr-only">City</Form.Label>
-                                <Form.Control type="text" placeholder="City" value={this.getFormValue('city')} onChange={(e) => this.setFormValue("city", e.target.value)}/>
+                                <Form.Control className={this.getErrorClass('city')} type="text" placeholder="City" value={this.getFormValue('city')} onChange={(e) => this.setFormValue("city", e.target.value)}/>
                             </Form.Group>
                         </div>
                         <div className="col-md-4">
                             <Form.Group controlId="stateOrProvince">
                                 <Form.Label className="sr-only">State/Province</Form.Label>
-                                <Form.Control type="text" placeholder="State or province" value={this.getFormValue('stateOrProvince')} onChange={(e) => this.setFormValue("stateOrProvince", e.target.value)}/>
+                                <Form.Control className={this.getErrorClass('stateOrProvince')} type="text" placeholder="State or province" value={this.getFormValue('stateOrProvince')} onChange={(e) => this.setFormValue("stateOrProvince", e.target.value)}/>
                             </Form.Group>
                         </div>
                         <div className="col-md-4">
                             <Form.Group controlId="zipOrPostalCode">
                                 <Form.Label className="sr-only">Zip/Postal Code</Form.Label>
-                                <Form.Control type="text" placeholder="Zip or postal code" value={this.getFormValue('zipOrPostalCode')} onChange={(e) => this.setFormValue("zipOrPostalCode", e.target.value)}/>
+                                <Form.Control className={this.getErrorClass('zipOrPostalCode')} type="text" placeholder="Zip or postal code" value={this.getFormValue('zipOrPostalCode')} onChange={(e) => this.setFormValue("zipOrPostalCode", e.target.value)}/>
                             </Form.Group>
                         </div>
                     </div>,
@@ -466,7 +466,7 @@ class OfferingList extends Component {
                                 {description}
                                 <Form.Group className="mb-3" controlId="formName">
                                     <Form.Label className="sr-only">Name</Form.Label>
-                                    <Form.Control type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
+                                    <Form.Control className={this.getErrorClass('for')} type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
                                     <Form.Text className="text-muted">
                                         Please provide the full name of the person associated with this membership/item. 
                                         This name will appear on your badge, and does not need to be a wallet name.
@@ -489,6 +489,19 @@ class OfferingList extends Component {
                     </Modal>
                 </div>
             );
+        }
+    }
+
+    getErrorClass(name) {
+        return this.isFieldInError(name) ? "is-invalid" : "";
+    }
+
+    isFieldInError(name) {
+        let errors = this.state.errors;
+        if (errors) {
+            return errors[name];
+        } else {
+            return false;
         }
     }
 
@@ -530,17 +543,24 @@ class OfferingList extends Component {
         let state = this.state;
         let value = state.values;
         let newValue = { ...value };
+        let errors = this.state.errors || {};
         newValue[formName] = formValue;
+        if (formName === 'for') {
+            errors[formName] = (this.validateFor(formValue) !== null);
+        } else if (formName === 'email') {
+            errors[formName] = (this.validateEmail(formValue) !== null);
+        } else if (formName === 'amount') {
+            errors[formName] = (this.validateAmount(formValue) !== null);
+        } else {
+            errors[formName] = false;
+        }
         this.setState({
             ...state,
             values: newValue,
-            messages: null
+            messages: null,
+            errors: errors
         });
 
-    }
-
-    isValidForm() {
-        return this.validateForm().length === 0;
     }
 
     toNumber(value) {
@@ -552,43 +572,99 @@ class OfferingList extends Component {
         }
     }
 
-    validateForm() {
-        let messages = [];
+    validateEmail(value) {
         let offering = this.state.selectedOffering;
+
+        let message = null;
+        if (offering.emailRequired === 'REQUIRED' && (!value || !isValidEmail(value))) {
+            message = "Please provide a valid email.";
+        } else if (value && !isValidEmail(value)) {
+            message = "That email doesn't look quite right.";
+        }
+        return message;
+    }
+
+    validateAmount(value) {
+        let offering = this.state.selectedOffering;
+
+        let message = null;
+        if (value && !/^(\d*(\.\d{2})?)$/.test(value)) {
+            message = "The amount value looks a bit fishy";
+        } else if (value === '' || (value === 0 && offering.suggestedPrice == null)) {
+            message = "Please provide an amount.";
+        } else if (this.isVariableAmount(offering) && value < offering.minimumPrice) {
+            message = "The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency);
+        } else if (this.isVariableAmount(offering) && value > offering.maximumPrice) {
+            message = "The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency);
+        } else if (value === "0") {
+            message = "Please choose an amount greater than zero.";
+        }
+        return message
+    }
+
+    validateFor(value) {
+        let message = null;
+        if (!value) {
+            message = "Please provide a name.";
+        }
+        return message
+    }
+
+    isValidForm() {
+        let messages = [];
         let values = this.state.values;
-        if (!values.for) {
-            messages.push("Please provide a name.");
+        let errors = {};
+        {
+            let message = this.validateFor(values.for);
+            if (message) {
+                errors['for'] = true;
+                messages.push(message);
+            }
         }
-        if (offering.emailRequired === 'REQUIRED' && (!values.email || !isValidEmail(values.email))) {
-            messages.push("Please provide a valid email.");
-        } else if (values.email && !isValidEmail(values.email)) {
-            messages.push("That email doesn't look quite right.");
+        {
+            let message = this.validateEmail(values.email);
+            if (message) {
+                errors['email'] = true;
+                messages.push(message);
+            }
         }
-        if (values.amount && !/^(\d*(\.\d{2})?)$/.test(values.amount)) {
-            messages.push("The amount value looks a bit fishy");
-        } else if (values.amount === '' || (values.amount === 0 && offering.suggestedPrice == null)) {
-            messages.push("Please provide an amount.");
-        } else if (this.isVariableAmount(offering) && values.amount < offering.minimumPrice) {
-            messages.push("The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency));
-        } else if (this.isVariableAmount(offering) && values.amount > offering.maximumPrice) {
-            messages.push("The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency));
+        {
+            let message = this.validateAmount(values.amount);
+            if (message) {
+                errors['amount'] = true;
+                messages.push(message);
+            }
         }
 
         if (this.isAddressRequired()) {
             if (!values.streetLine1) {
+                errors['streetLine1'] = true;
                 messages.push("Please provide a valid address");
             }
             if (!values.city) {
+                errors['city'] = true;
                 messages.push("Surely your address must have a city.");
             }
             if (!values.stateOrProvince && (values.country === 'United States' || values.country === 'Canada')) {
+                errors['stateOrProvince'] = true;
                 messages.push("State and/or province is missing.");
             }
             if (!values.zipOrPostalCode && (values.country === 'United States' || values.country === 'Canada')) {
+                errors['zipOrPostalCode'] = true;
                 messages.push("Zip or postal code is missing.");
             }
         }
-        return messages;
+
+        if (messages.length > 0) {
+            this.setState({
+                ...this.state,
+                messages: messages,
+                errors: errors
+            });
+            return false;
+        } else {
+            return true;
+        }
     }
 
     showModal(offering) {
@@ -610,6 +686,7 @@ class OfferingList extends Component {
             showModal: true,
             selectedOffering: offering,
             values: value,
+            errors: {},
             messages: null
         });
     }
@@ -648,11 +725,6 @@ class OfferingList extends Component {
                     });
                 });
 
-        } else {
-            this.setState({
-                ...this.state,
-                messages: this.validateForm()
-            });
         }
     }
 
