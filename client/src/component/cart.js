@@ -27,14 +27,16 @@ class Cart extends Component {
     render() {
         let count = this.state.cart.length;
         let total = 0;
+        let currency = undefined;
         let itemList = this.state.cart.map((e, i) => {
             total += e.amount;
+            currency = e.offering.currency;
             return <li className="list-group-item d-flex justify-content-between lh-sm" key={i}>
                 <div>
                     <h6 className="my-0">{e.offering.title}</h6>
                     <small className="text-muted">{e.for}</small>
                 </div>
-                <span className="text-muted">{formatAmount(e.amount)}</span>
+                <span className="text-muted">{formatAmount(e.amount, e.offering.currency)}</span>
             </li>
         });
         let message = count <= 0 
@@ -43,7 +45,7 @@ class Cart extends Component {
                 {itemList}
                 <li className="list-group-item d-flex justify-content-between lh-sm" key="total">
                     <h6 className="my-0">Total (USD)</h6>
-                    <strong>{formatAmount(total)}</strong>
+                    <strong>{formatAmount(total, currency)}</strong>
                 </li>
             </ul>);
 

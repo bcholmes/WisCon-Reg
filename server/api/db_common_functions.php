@@ -162,12 +162,8 @@ function create_order_with_order_uuid($ini, $conData, $order_uuid) {
     }
 }
 
-function mark_order_as_finalized($ini, $order_id, $payment_method, $email_address) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function mark_order_as_finalized($db, $order_id, $payment_method, $email_address) {
+    $query = <<<EOD
  UPDATE reg_order
     SET payment_method = ?,
         confirmation_email = ?,
@@ -176,45 +172,35 @@ function mark_order_as_finalized($ini, $order_id, $payment_method, $email_addres
   WHERE id = ?;
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "ssi", $payment_method, $email_address, $order_id);
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "ssi", $payment_method, $email_address, $order_id);
 
-        if ($stmt->execute()) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return true;
-        } else {
-            mysqli_close($db);
-            return false;
-        }
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        return false;
     }
 }
 
-function mark_order_as_paid($ini, $order_id) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function mark_order_as_paid($db, $order_id) {
+    $query = <<<EOD
  UPDATE reg_order
     SET payment_date = now(),
         status = 'PAID'
   WHERE id = ?;
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $order_id);
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order_id);
 
-        if ($stmt->execute()) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return true;
-        } else {
-            mysqli_close($db);
-            return false;
-        }
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        return false;
     }
 }
 

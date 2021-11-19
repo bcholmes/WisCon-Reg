@@ -11,65 +11,55 @@ require_once("format_functions.php");
 
 $ini = read_ini();
 
-$conData = find_current_con($ini);
-
-function create_order_items_table($ini, $order, $email_address) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
-        SELECT 
-               i.for_name, i.email_address, i.amount, off.title, off.currency
-          FROM 
-            reg_order_item i
-          LEFT OUTER JOIN reg_offering off
-               ON 
-                   i.offering_id = off.id
-         WHERE i.order_id  = ?
-         ORDER BY i.id
+function create_order_items_table($db, $order, $email_address) {
+    $query = <<<EOD
+    SELECT 
+            i.for_name, i.email_address, i.amount, off.title, off.currency
+        FROM 
+        reg_order_item i
+        LEFT OUTER JOIN reg_offering off
+            ON 
+                i.offering_id = off.id
+        WHERE i.order_id  = ?
+        ORDER BY i.id
 EOD;
 
-        $lines = '<table><thead><tr><th style=\"text-align: left;\">Description</th><th style=\"text-align: left;\">Name</th><th style=\"text-align: right;\">Amount</th></tr></thead></tbody>';
-        $addressee = null;
-        $total = 0.0;
-        $stmt = mysqli_prepare($db, $query);
-        $currency = null;
-        mysqli_stmt_bind_param($stmt, "i", $order->id);
-        mysqli_set_charset($db, "utf8");
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
+    $lines = '<table><thead><tr><th style=\"text-align: left;\">Description</th><th style=\"text-align: left;\">Name</th><th style=\"text-align: right;\">Amount</th></tr></thead></tbody>';
+    $addressee = null;
+    $total = 0.0;
+    $stmt = mysqli_prepare($db, $query);
+    $currency = null;
+    mysqli_stmt_bind_param($stmt, "i", $order->id);
+    mysqli_set_charset($db, "utf8");
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
 
-            while ($row = mysqli_fetch_object($result)) {
-                $amount = format_monetary_amount($row->amount, $row->currency);
-                $currency = $row->currency;
+        while ($row = mysqli_fetch_object($result)) {
+            $amount = format_monetary_amount($row->amount, $row->currency);
+            $currency = $row->currency;
 
-                $table_row = "<tr><td style=\"padding-right: 1rem;\">" . $row->title . "</td><td style=\"padding-right: 1rem;\">" . $row->for_name . "</td><td style=\"text-align: right\">" . $amount . "</td></tr>";
-                $lines = $lines . $table_row;
-                $total += $row->amount;
+            $table_row = "<tr><td style=\"padding-right: 1rem;\">" . $row->title . "</td><td style=\"padding-right: 1rem;\">" . $row->for_name . "</td><td style=\"text-align: right\">" . $amount . "</td></tr>";
+            $lines = $lines . $table_row;
+            $total += $row->amount;
 
-                if ((!$addressee && $row->for_name) || $row->email_address === $email_address) {
-                    $addressee = $row->for_name;
-                }
+            if ((!$addressee && $row->for_name) || $row->email_address === $email_address) {
+                $addressee = $row->for_name;
             }
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-        } else {
-            mysqli_close($db);
         }
-
-        $amount = format_monetary_amount($total, $currency);
-        $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
-
-        return array(
-            "lines" => $lines,
-            "addressee" => $addressee
-        );
+        mysqli_stmt_close($stmt);
     }
+
+    $amount = format_monetary_amount($total, $currency);
+    $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
+
+    return array(
+        "lines" => $lines,
+        "addressee" => $addressee
+    );
 }
 
 
-function process_stripe_status($ini, $order, $paymentMethod) {
+function process_stripe_status($ini, $db, $order, $paymentMethod) {
     // Set your secret key. Remember to switch to your live secret key in production.
     // See your keys here: https://dashboard.stripe.com/apikeys
 
@@ -81,7 +71,7 @@ function process_stripe_status($ini, $order, $paymentMethod) {
     
         $payment_intent = \Stripe\PaymentIntent::retrieve($order->payment_intent_id, []);
         if ($payment_intent->status === 'succeeded') {
-            return mark_order_as_paid($ini, $order->id);
+            return mark_order_as_paid($db, $order->id);
         } else {
             return false;
         }
@@ -97,11 +87,11 @@ function process_stripe_status($ini, $order, $paymentMethod) {
 }
 
 
-function compose_email($ini, $conData, $email_address, $payment_method, $order, $locale) {
+function compose_email($ini, $db, $conData, $email_address, $payment_method, $order, $locale) {
 
     $cheque = format_payment_type_for_display('CHEQUE', $locale);
 
-    $result = create_order_items_table($ini, $order, $email_address);
+    $result = create_order_items_table($db, $order, $email_address);
 
     if ($result) {
         $reg_email = $ini['email']['reg_email'];
@@ -170,27 +160,38 @@ EOD;
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+try {
+    $db = connect_to_db($ini);
+    try {
+        $conData = find_current_con_with_db($db);
 
-    $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if ($conData) {
+            $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json);
+            if ($conData) {
 
-        $order_uuid = $data->orderId;
-        if ($order_uuid && $data->paymentMethod && $data->email) {
+                $json = file_get_contents('php://input');
+                $data = json_decode($json);
 
-            $order = find_order_by_order_uuid($ini, $conData, $order_uuid);
+                $order_uuid = $data->orderId;
+                if ($order_uuid && $data->paymentMethod && $data->email) {
 
-            if ($order) {
-                if (mark_order_as_finalized($ini, $order->id, $data->paymentMethod, $data->email)) {
-                    if (process_stripe_status($ini, $order, $data->paymentMethod)) {
-                        if (compose_email($ini, $conData, $data->email, $data->paymentMethod, $order, $locale)) {
-                            http_response_code(201);
+                    $order = find_order_by_order_uuid($ini, $conData, $order_uuid);
+
+                    if ($order) {
+                        if (mark_order_as_finalized($db, $order->id, $data->paymentMethod, $data->email)) {
+                            if (process_stripe_status($ini, $db, $order, $data->paymentMethod)) {
+                                if (compose_email($ini, $db, $conData, $data->email, $data->paymentMethod, $order, $locale)) {
+                                    http_response_code(201);
+                                } else {
+                                    http_response_code(500);
+                                }
+                            } else {
+                                http_response_code(500);
+                            }
                         } else {
-                            http_response_code(500);
+                            http_response_code(400);
                         }
                     } else {
                         http_response_code(500);
@@ -201,17 +202,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 http_response_code(500);
             }
+
+        } else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(201);
         } else {
-            http_response_code(400);
+            http_response_code(404);
         }
-    } else {
-        http_response_code(500);
+    } finally {
+        mysqli_close($db);
     }
-
-} else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(201);
-} else {
-    http_response_code(404);
+} catch (Exception $e) {
+    http_response_code(500);
 }
-
 ?>

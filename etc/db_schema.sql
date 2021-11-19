@@ -3,7 +3,7 @@ create table reg_perennial_con_info (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name varchar(90) not null,
     website_url varchar(255) not null
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table reg_con_info (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -19,7 +19,7 @@ create table reg_con_info (
     FOREIGN KEY (perennial_con_id)
         REFERENCES reg_perennial_con_info (id)
         ON UPDATE RESTRICT ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table reg_offering (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,7 +41,7 @@ create table reg_offering (
     FOREIGN KEY (con_id)
         REFERENCES reg_con_info(id)
         ON UPDATE RESTRICT ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table reg_offering_highlight (
     offering_id INT NOT NULL,
@@ -52,7 +52,7 @@ create table reg_offering_highlight (
     FOREIGN KEY (offering_id)
         REFERENCES reg_offering(id)
         ON UPDATE RESTRICT ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 insert into reg_perennial_con_info (name, website_url) 
 values ('WisCon', 'https://wiscon.net');
@@ -241,7 +241,7 @@ create table reg_order (
     FOREIGN KEY (con_id)
         REFERENCES reg_con_info(id)
         ON UPDATE RESTRICT ON DELETE CASCADE,
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table reg_order_item (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -259,7 +259,7 @@ create table reg_order_item (
     FOREIGN KEY (order_id)
         REFERENCES reg_order(id)
         ON UPDATE RESTRICT ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 alter table reg_order add column payment_intent_id varchar(1024);
 
@@ -292,3 +292,32 @@ alter table reg_offering add column age_required char(1) not null default 'N';
 update reg_offering set age_required = 'Y' where title = 'WisCon Child Care';
 
 alter table reg_order_item add column age varchar(255);
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(27, 'Online Teen Membership', 1, '2022-05-31 23:59:59', 20.00, 
+'The Online Teen Membership provides access to the online portion of WisCon 2022 (visit https://wiscon.net/register/ for more information)', 
+'Y', 'Y', 'OPTIONAL');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Online Access to Streamed Events'
+from reg_offering;
+
+create table reg_program_link (
+    con_id int not null,
+    order_item_id int not null,
+    badgeid varchar(15) not null,
+
+    FOREIGN KEY (con_id)
+        REFERENCES reg_con_info(id)
+        ON UPDATE RESTRICT ON DELETE CASCADE,
+    FOREIGN KEY (order_item_id)
+        REFERENCES reg_order_item(id)
+        ON UPDATE RESTRICT ON DELETE CASCADE,
+    FOREIGN KEY (`badgeid`)
+        REFERENCES `Participants`(`badgeid`)
+        ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
