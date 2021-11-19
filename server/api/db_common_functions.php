@@ -2,40 +2,60 @@
 // Copyright (c) 2021 BC Holmes. All rights reserved. See copyright document for more details.
 // These functions provide support for common database queries.
 
-function find_current_con($db_ini) {
+class DatabaseException extends Exception {};
+class DatabaseSqlException extends DatabaseException {};
+
+function connect_to_db($db_ini) {
     $db = mysqli_connect($db_ini['mysql']['host'], $db_ini['mysql']['user'], $db_ini['mysql']['password'], $db_ini['mysql']['db_name']);
     if (!$db) {
-        return false;
+        throw new DatabaseException("Could not connect to database");
     } else {
-        $query = <<<EOD
- SELECT 
-        c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
-   FROM 
-        reg_con_info c, reg_perennial_con_info p
-  WHERE 
-        c.perennial_con_id = p.id AND
-        c.active_from_time <= NOW() AND
-        c.active_to_time >= NOW();
-
- EOD;
-
         mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 1) {
-                $dbobject = mysqli_fetch_object($result);
-                mysqli_stmt_close($stmt);
-                mysqli_close($db);
-                return $dbobject;
-            } else {
-                mysqli_close($db);
-                return false;
-            }
+        return $db;
+    }
+}
+
+function find_current_con_with_db($db) {
+    $query = <<<EOD
+    SELECT 
+           c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
+      FROM 
+           reg_con_info c, reg_perennial_con_info p
+     WHERE 
+           c.perennial_con_id = p.id AND
+           c.active_from_time <= NOW() AND
+           c.active_to_time >= NOW();
+   
+    EOD;
+   
+    $stmt = mysqli_prepare($db, $query);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        if (mysqli_num_rows($result) == 1) {
+            $dbobject = mysqli_fetch_object($result);
+            mysqli_stmt_close($stmt);
+            return $dbobject;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+function find_current_con($db_ini) {
+    try {
+        $db = connect_to_db($db_ini);
+        $con = find_current_con_with_db($db);
+        if ($con) {
+            mysqli_close($db);
+            return $con;
         } else {
             mysqli_close($db);
             return false;
         }
+    } catch (Exception $e) {
+        return false;
     }
 }
 

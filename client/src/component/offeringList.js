@@ -103,9 +103,9 @@ class OfferingList extends Component {
 
             let message = this.state.messages ? this.state.messages.map((e, i)  => {
                 return (<Alert variant="danger" key={i}>{e}</Alert>); } ) : undefined;
-            let emailLabel = "Email address";
+            let emailLabel = "Email (same as WisCon programming signup, if relevant)";
             if (this.state.selectedOffering && this.state.selectedOffering.emailRequired === 'OPTIONAL') {
-                emailLabel = "Email address (optional)"
+                emailLabel = "Email (optional, same as WisCon programming signup, if relevant)"
             }
             let emailOption =  (<Form.Group controlId="formEmail" key="email-field">
                 <Form.Label className="sr-only">{emailLabel}</Form.Label>
@@ -131,12 +131,15 @@ class OfferingList extends Component {
                     </Form.Text>
                 </Form.Group>);
             } else if (this.isVariableAmount(this.state.selectedOffering)) {
+                let guidance = (this.state.selectedOffering.maximumPrice != null) 
+                    ? ' Please choose an amount between ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + ' and ' + formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency) + '.'
+                    : ' Please choose an amount greater than or equal to ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + '.';
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
                     <Form.Label className="sr-only">Amount</Form.Label>
                     <Form.Control className={this.getErrorClass('amount')} type="text" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue('amount', e.target.value)}/>
                     <Form.Text className="text-muted">
                         The suggested price for this item ({this.state.selectedOffering.title}) is {formatAmount(this.state.selectedOffering.suggestedPrice, this.state.selectedOffering.currency)}.
-                        Please choose an amount between {formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency)} and {formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency)}.
+                        {guidance}
                     </Form.Text>
                 </Form.Group>);
             }
@@ -525,7 +528,7 @@ class OfferingList extends Component {
 
     isVariableAmount(offering) {
         if (offering) {
-            return offering.minimumPrice && offering.maximumPrice;
+            return offering.minimumPrice;
         } else {
             return false;
         }
@@ -594,7 +597,7 @@ class OfferingList extends Component {
             message = "Please provide an amount.";
         } else if (this.isVariableAmount(offering) && value < offering.minimumPrice) {
             message = "The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency);
-        } else if (this.isVariableAmount(offering) && value > offering.maximumPrice) {
+        } else if (this.isVariableAmount(offering) && offering.maximumPrice != null && value > offering.maximumPrice) {
             message = "The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency);
         } else if (value === "0") {
             message = "Please choose an amount greater than zero.";
