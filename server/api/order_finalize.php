@@ -6,6 +6,7 @@ require_once('../vendor/autoload.php');
 
 require_once("config.php");
 require_once("db_common_functions.php");
+require_once("zambia_functions.php");
 require_once("email_functions.php");
 require_once("format_functions.php");
 
@@ -47,23 +48,93 @@ EOD;
             }
         }
         mysqli_stmt_close($stmt);
+
+        $amount = format_monetary_amount($total, $currency);
+        $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
+    
+        return array(
+            "lines" => $lines,
+            "addressee" => $addressee
+        );
+
+    } else {
+        throw new DatabaseSqlException("The Select statement could not be executed");
     }
+}
 
-    $amount = format_monetary_amount($total, $currency);
-    $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
+function find_all_membership_order_items($db, $order) {
+    $query = <<<EOD
+    SELECT 
+           i.id, i.email_address, i.for_name, o.title, o.address_required, i.snail_mail_ok
+      FROM 
+           reg_order_item i, reg_offering o
+     WHERE 
+           i.order_id = ?
+       AND
+           o.id = i.offering_id
+       AND
+           o.is_membership = 'Y';
+    EOD;
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order->id);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
 
-    return array(
-        "lines" => $lines,
-        "addressee" => $addressee
-    );
+        $memberships = array();
+        while ($row = mysqli_fetch_object($result)) {
+            $memberships[] = array(
+                "order_item_id" => $row->id,
+                "email_address" => $row->email_address,
+                "for_name" => $row->for_name,
+                "title" => $row->title
+            );
+        }
+        mysqli_free_result($result);
+        mysqli_stmt_close($stmt);
+        return $memberships;
+    } else {
+        throw new DatabaseSqlException("The Select statement could not be processed: " . $query);
+    }
+}
+
+/**
+ * Periodically, one person will register for a whole family, and use the same
+ * email address for each family member. Obviously, this makes correlating records
+ * by email address complicated.
+ */
+function is_email_address_unique($email, $memberships) {
+    $count = 0;
+    foreach ($memberships as $membership):
+        if ($email === $membership['email_address']) {
+            $count = $count + 1;
+        }
+    endforeach;
+
+    return $count === 1;
+}
+
+
+function update_programming_system($db, $conData, $order) {
+    $memberships = find_all_membership_order_items($db, $order);
+
+    foreach ($memberships as $membership):
+
+        $isEmailAddressUnique = is_email_address_unique($membership['email_address'], $memberships);
+        $badgeid = find_best_candidate_badgeid($db, $conData, $membership['for_name'], $membership['email_address'], $isEmailAddressUnique);
+        if ($badgeid) {
+            update_programming_user($db, $badgeid, $membership['for_name'], $membership['title']);
+        } else {
+            $badgeid = next_badgeid($db);
+            create_new_programming_user($db, $badgeid, $membership['for_name'], $membership['email_address'], $membership['title']);
+        }
+        create_programming_user_link($db, $conData, $badgeid, $membership['order_item_id']);
+
+    endforeach;
+
 }
 
 
 function process_stripe_status($ini, $db, $order, $paymentMethod) {
-    // Set your secret key. Remember to switch to your live secret key in production.
-    // See your keys here: https://dashboard.stripe.com/apikeys
-
-
     if ($paymentMethod === 'CARD') {
         \Stripe\Stripe::setApiKey(
             $ini['stripe']['secret_key']
@@ -177,24 +248,20 @@ try {
                 $order_uuid = $data->orderId;
                 if ($order_uuid && $data->paymentMethod && $data->email) {
 
-                    $order = find_order_by_order_uuid($ini, $conData, $order_uuid);
+                    $order = find_order_by_order_uuid_with_db($db, $conData, $order_uuid);
 
                     if ($order) {
-                        if (mark_order_as_finalized($db, $order->id, $data->paymentMethod, $data->email)) {
-                            if (process_stripe_status($ini, $db, $order, $data->paymentMethod)) {
-                                if (compose_email($ini, $db, $conData, $data->email, $data->paymentMethod, $order, $locale)) {
-                                    http_response_code(201);
-                                } else {
-                                    http_response_code(500);
-                                }
-                            } else {
-                                http_response_code(500);
-                            }
+                        mark_order_as_finalized($db, $order->id, $data->paymentMethod, $data->email);
+                        if (process_stripe_status($ini, $db, $order, $data->paymentMethod)) {
+                            compose_email($ini, $db, $conData, $data->email, $data->paymentMethod, $order, $locale);
+
+                            update_programming_system($db, $conData, $order);
+                            http_response_code(201);
                         } else {
-                            http_response_code(400);
+                            http_response_code(500);
                         }
                     } else {
-                        http_response_code(500);
+                        http_response_code(400);
                     }
                 } else {
                     http_response_code(400);
@@ -212,6 +279,10 @@ try {
         mysqli_close($db);
     }
 } catch (Exception $e) {
+    error_log($e->getMessage());
+    error_log($e->getFile());
+    error_log($e->getLine());
+    error_log($e->getTraceAsString());
     http_response_code(500);
 }
 ?>

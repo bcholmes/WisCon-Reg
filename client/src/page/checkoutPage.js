@@ -206,9 +206,9 @@ class CheckoutPage extends Component {
                                 <p>Please make your check for {total} payable to SF3 and mail it to the following address:</p>
 
                                 <p>
-                                    WisCon Registration<br />
-                                    123 Main St.<br />
-                                    Madison, WI, 12345<br />
+                                    SF3<br />
+                                    PO Box 1624<br />
+                                    Madison WI 53701-1624<br />
                                     USA
                                 </p>
 

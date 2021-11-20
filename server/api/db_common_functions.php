@@ -95,6 +95,34 @@ function find_order_by_order_uuid($ini, $conData, $order_uuid) {
     }
 }
 
+function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
+    $query = <<<EOD
+ SELECT 
+        o.id, o.status, o.payment_intent_id
+   FROM 
+        reg_order o
+  WHERE 
+        o.order_uuid = ? AND
+        o.con_id  = ?;
+ EOD;
+
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        if (mysqli_num_rows($result) == 1) {
+            $dbobject = mysqli_fetch_object($result);
+            mysqli_stmt_close($stmt);
+            return $dbobject;
+        } else {
+            return null;
+        }
+    } else {
+        throw new DatabaseSqlException("The Select could not be processed.");
+    }
+}
+
 function find_name_by_email_address($ini, $conData, $email_address) {
     $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
     if (!$db) {
@@ -178,9 +206,8 @@ function mark_order_as_finalized($db, $order_id, $payment_method, $email_address
 
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
-        return true;
     } else {
-        return false;
+        throw new DatabaseSqlException("The Update could not be processed");
     }
 }
 
@@ -232,9 +259,9 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
         mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
-            boolean_value_from($values->newsletter),
-            boolean_value_from($values->volunteer),
-            boolean_value_from($values->snailMail),
+            boolean_value_from($values->newsletter ? $values->newsletter : 'false'),
+            boolean_value_from($values->volunteer ? $values->volunteer : 'false'),
+            boolean_value_from($values->snailMail ? $values->snailMail : 'false'),
             $values->streetLine1,
             $values->streetLine2,
             $values->city,
