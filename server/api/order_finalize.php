@@ -65,7 +65,9 @@ EOD;
 function find_all_membership_order_items($db, $order) {
     $query = <<<EOD
     SELECT 
-           i.id, i.email_address, i.for_name, o.title, o.address_required, i.snail_mail_ok
+           i.id, i.email_address, i.for_name, o.title, o.address_required, i.snail_mail_ok, 
+           i.street_line_1, i.street_line_2, i.city, i.state_or_province, i.zip_or_postal_code, 
+           i.country
       FROM 
            reg_order_item i, reg_offering o
      WHERE 
@@ -82,12 +84,25 @@ function find_all_membership_order_items($db, $order) {
 
         $memberships = array();
         while ($row = mysqli_fetch_object($result)) {
-            $memberships[] = array(
+            $membership = array(
                 "order_item_id" => $row->id,
                 "email_address" => $row->email_address,
                 "for_name" => $row->for_name,
                 "title" => $row->title
             );
+            if (($row->address_required == 'Y') || ($row->snail_mail_ok == 'Y')) {
+                error_log("adding an address");
+                $address = array(
+                    "street_line_1" => $row->street_line_1,
+                    "street_line_2" => $row->street_line_2,
+                    "city" => $row->city,
+                    "state_or_province" => $row->state_or_province,
+                    "zip_or_postal_code" => $row->zip_or_postal_code,
+                    "country" => $row->country,
+                );
+                $membership['address'] = $address;
+            }
+            $memberships[] = $membership;
         }
         mysqli_free_result($result);
         mysqli_stmt_close($stmt);
@@ -121,21 +136,28 @@ function update_programming_system($db, $conData, $order) {
 
         $isEmailAddressUnique = is_email_address_unique($membership['email_address'], $memberships);
         $badgeid = find_best_candidate_badgeid($db, $conData, $membership['for_name'], $membership['email_address'], $isEmailAddressUnique);
-        if ($badgeid) {
-            update_programming_user($db, $badgeid, $membership['for_name'], $membership['title']);
-        } else {
-            $badgeid = next_badgeid($db);
-            create_new_programming_user($db, $badgeid, $membership['for_name'], $membership['email_address'], $membership['title']);
+        mysqli_begin_transaction($db);
+        try {
+            if ($badgeid) {
+                update_programming_user($db, $badgeid, $membership['for_name'], $membership['title'], array_key_exists('address', $membership) != null ? $membership['address'] : null);
+            } else {
+                $badgeid = next_badgeid($db);
+                create_new_programming_user($db, $badgeid, $membership['for_name'], $membership['email_address'], $membership['title'], array_key_exists('address', $membership) != null ? $membership['address'] : null);
+            }
+            create_programming_user_link($db, $conData, $badgeid, $membership['order_item_id']);
+            mysqli_commit($db);
+        } catch (mysqli_sql_exception $e) {
+            mysqli_rollback($db);
+            throw $e;
         }
-        create_programming_user_link($db, $conData, $badgeid, $membership['order_item_id']);
-
     endforeach;
-
 }
 
 
 function process_stripe_status($ini, $db, $order, $paymentMethod) {
-    if ($paymentMethod === 'CARD') {
+    if ($order->status != 'IN_PROGRESS') {
+        return true;
+    } else if ($paymentMethod === 'CARD') {
         \Stripe\Stripe::setApiKey(
             $ini['stripe']['secret_key']
         );
@@ -250,7 +272,7 @@ try {
 
                     $order = find_order_by_order_uuid_with_db($db, $conData, $order_uuid);
 
-                    if ($order) {
+                    if ($order && ($order->status === 'IN_PROGRESS')) {
                         mark_order_as_finalized($db, $order->id, $data->paymentMethod, $data->email);
                         if (process_stripe_status($ini, $db, $order, $data->paymentMethod)) {
                             compose_email($ini, $db, $conData, $data->email, $data->paymentMethod, $order, $locale);
@@ -260,6 +282,8 @@ try {
                         } else {
                             http_response_code(500);
                         }
+                    } else if ($order) {
+                        http_response_code(409);
                     } else {
                         http_response_code(400);
                     }

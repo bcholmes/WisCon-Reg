@@ -110,7 +110,7 @@ EOD;
 }
 
 
-function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $reg_type) {
+function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $reg_type, $address) {
     $query = <<<EOD
     INSERT
         INTO `Participants` (badgeid, pubsname)
@@ -127,17 +127,30 @@ function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $
         throw new DatabaseSqlException("The Insert could not be processed");
     }
 
-    $query = <<<EOD
-    INSERT
-        INTO `CongoDump` (badgeid, badgename, `email`, regtype, firstname, lastname)
- VALUES 
-        (?, ?, ?, ?, ?, ?);
- EOD;
-
     $name = split_first_and_last_names($pubsname);
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "ssssss", $badgeid, $pubsname, $email_address, $reg_type, $name['first_name'], $name['last_name']);
+    if ($address != null) {
+        $query = <<<EOD
+        INSERT INTO `CongoDump` 
+            (badgeid, badgename, `email`, regtype, firstname, lastname, 
+            postaddress1, postaddress2, postcity, poststate, postzip, postcountry)
+    VALUES 
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    EOD;
 
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "ssssssssssss", $badgeid, $pubsname, $email_address, $reg_type, $name['first_name'], $name['last_name'],
+            $address['street_line_1'], $address['street_line_2'], $address['city'], $address['state_or_province'], $address['zip_or_postal_code'], $address['country']);
+    } else {
+        $query = <<<EOD
+        INSERT
+            INTO `CongoDump` (badgeid, badgename, `email`, regtype, firstname, lastname)
+    VALUES 
+            (?, ?, ?, ?, ?, ?);
+    EOD;
+
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "ssssss", $badgeid, $pubsname, $email_address, $reg_type, $name['first_name'], $name['last_name']);
+    }
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
     } else {
@@ -146,7 +159,7 @@ function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $
 }
 
 
-function update_programming_user($db, $badgeid, $pubsname, $reg_type) {
+function update_programming_user($db, $badgeid, $pubsname, $reg_type, $address) {
     $query = <<<EOD
     UPDATE `Participants` 
      SET pubsname = ?
@@ -162,15 +175,28 @@ function update_programming_user($db, $badgeid, $pubsname, $reg_type) {
         throw new DatabaseSqlException("The Update could not be processed");
     }
 
-    $query = <<<EOD
-    UPDATE `CongoDump` 
-       SET badgename = ?, regtype = ? 
-       WHERE badgeid = ?;
-    EOD;
+    if ($address != null) {
+        $query = <<<EOD
+        UPDATE `CongoDump` 
+        SET badgename = ?, regtype = ?,
+            postaddress1 = ?, postaddress2 = ?, postcity = ?, poststate = ?, postzip = ?, postcountry = ?
+        WHERE badgeid = ?;
+        EOD;
 
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "sss", $pubsname, $reg_type, $badgeid);
-
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "sssssssss", $pubsname, $reg_type, 
+            $address['street_line_1'], $address['street_line_2'], $address['city'], $address['state_or_province'], $address['zip_or_postal_code'], 
+            $address['country'], $badgeid);
+    } else {
+        $query = <<<EOD
+        UPDATE `CongoDump` 
+           SET badgename = ?, regtype = ? 
+           WHERE badgeid = ?;
+        EOD;
+    
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "sss", $pubsname, $reg_type, $badgeid);
+    }
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
     } else {

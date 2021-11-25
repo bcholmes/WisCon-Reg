@@ -259,9 +259,9 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
         mysqli_set_charset($db, "utf8");
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
-            boolean_value_from($values->newsletter ? $values->newsletter : 'false'),
-            boolean_value_from($values->volunteer ? $values->volunteer : 'false'),
-            boolean_value_from($values->snailMail ? $values->snailMail : 'false'),
+            boolean_value_from($values->newsletter != null ? $values->newsletter : false),
+            boolean_value_from($values->volunteer != null ? $values->volunteer : false),
+            boolean_value_from($values->snailMail != null ? $values->snailMail : false),
             $values->streetLine1,
             $values->streetLine2,
             $values->city,
