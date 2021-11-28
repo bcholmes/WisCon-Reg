@@ -62,6 +62,11 @@ insert into reg_con_info (name, perennial_con_id, con_start_date, con_end_date)
 select 'WisCon 2022', max(id), '2022-05-26', '2022-05-30'
 from reg_perennial_con_info;
 
+insert into reg_con_info (name, perennial_con_id, con_start_date, con_end_date, active_from_time, active_to_time, reg_open_time, reg_close_time) 
+select 'WisCon 2023', max(id), '2023-05-25', '2023-05-29', '2022-06-01 23:39:39', '2023-05-31 23:39:39' '2022-06-01 23:39:39', '2023-05-31 23:39:39'
+from reg_perennial_con_info;
+
+
 create view reg_users as 
 SELECT P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.email
     FROM

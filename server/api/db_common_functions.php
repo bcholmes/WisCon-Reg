@@ -11,6 +11,7 @@ function connect_to_db($db_ini) {
         throw new DatabaseException("Could not connect to database");
     } else {
         mysqli_set_charset($db, "utf8");
+        mysqli_query($db, "SET SESSION sql_mode = ''");
         return $db;
     }
 }
@@ -25,6 +26,36 @@ function find_current_con_with_db($db) {
            c.perennial_con_id = p.id AND
            c.active_from_time <= NOW() AND
            c.active_to_time >= NOW();
+   
+    EOD;
+   
+    $stmt = mysqli_prepare($db, $query);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        if (mysqli_num_rows($result) == 1) {
+            $dbobject = mysqli_fetch_object($result);
+            mysqli_stmt_close($stmt);
+            return $dbobject;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+function find_next_con($db) {
+    $query = <<<EOD
+    SELECT 
+            c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
+      FROM 
+            reg_con_info c, reg_perennial_con_info p
+     WHERE 
+            c.perennial_con_id = p.id AND
+            c.active_from_time >= NOW()
+     ORDER BY
+            c.active_from_time
+     LIMIT 1;
    
     EOD;
    
@@ -235,6 +266,25 @@ function mark_order_as_cancelled($db, $order_id) {
     $query = <<<EOD
  UPDATE reg_order
     SET status = 'CANCELLED'
+  WHERE id = ?;
+ EOD;
+
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order_id);
+
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function mark_order_as_refunded($db, $order_id) {
+    $query = <<<EOD
+ UPDATE reg_order
+    SET status = 'REFUNDED'
   WHERE id = ?;
  EOD;
 

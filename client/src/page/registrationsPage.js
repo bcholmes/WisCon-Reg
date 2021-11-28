@@ -143,7 +143,7 @@ class RegistrationsPage extends Component {
                     <Modal.Title>Order Review</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <AdminOrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} onUpdate={() => this.refresh()}/>
+                        <AdminOrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} onUpdate={() => this.handleOrderUpdate()}/>
                     </Modal.Body>
                 </Modal>
                 <Footer />
@@ -326,6 +326,14 @@ class RegistrationsPage extends Component {
                 }
             });
         }
+    }
+
+    handleOrderUpdate() {
+        this.handleClose();
+        this.timeout = setTimeout(() => {
+            this.refresh();
+            this.timeout = undefined;
+        }, 250);
     }
 
     refresh() {

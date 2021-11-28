@@ -19,7 +19,8 @@ class AdminOrderSummary extends Component {
 
         this.state = {
             loading: true,
-            updateMode: false
+            updateMode: false,
+            values: {}
         };
         this.fetchOrder(this.props.orderId, this.props.orderKey);
     }
@@ -76,7 +77,7 @@ class AdminOrderSummary extends Component {
                         <Button variant="link" onClick={() => this.updateMode(false)} >
                             Cancel
                         </Button>
-                        <Button type="submit" variant="primary" className="ml-3" key="update-button">
+                        <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.state.values['action']}>
                             Update
                         </Button>
                     </div>
@@ -184,20 +185,18 @@ class AdminOrderSummary extends Component {
                 "Authorization": "Bearer " + store.getState().auth.jwt
             }
         })
-            .then(res => {
-                if (this.props.onUpdate) {
-                    this.props.onUpdate();
-                }
-                this.fetchOrder(this.props.orderId, this.props.orderKey);
+        .then(res => {
+            if (this.props.onUpdate) {
+                this.props.onUpdate();
+            }
+        })
+        .catch(error => {
+            let message = "There was an error trying to get the specified order."
+            this.setState({
+                loading: false,
+                message: message
             })
-            .catch(error => {
-                let message = "There was an error trying to get the specified order."
-                this.setState({
-                    loading: false,
-                    message: message
-                })
-            });
-
+        });
     }
 
     fetchOrder(orderId, key) {

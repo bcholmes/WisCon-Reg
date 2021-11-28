@@ -72,6 +72,25 @@ function next_badgeid($db) {
     }
 }
 
+function remove_order_registrations($db, $conData, $orderId) {
+    $query = <<<EOD
+    UPDATE `CongoDump`
+       SET regtype = NULL
+     WHERE badgeid in 
+     (select badgeid from reg_program_link where con_id = ?
+        and order_item_id in (select id from reg_order_item where order_id = ?));
+EOD;
+
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "si", $orderId, $conData->id);
+
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+    } else {
+        throw new DatabaseSqlException($query);
+    }
+}
+
 function find_best_candidate_badgeid($db, $conData, $name, $email_address, $is_unique) {
     $query = <<<EOD
     SELECT 
@@ -80,7 +99,12 @@ function find_best_candidate_badgeid($db, $conData, $name, $email_address, $is_u
     WHERE   p.badgeid = c.badgeid
       AND   (c.regtype = '' OR c.regtype is null)
       AND   lower(c.email) = ?
-      AND   p.badgeid not in (SELECT badgeid from reg_program_link where con_id = ?);
+      AND   p.badgeid not in 
+            (SELECT badgeid 
+               from reg_program_link l, reg_order_item i, reg_order o 
+              where l.con_id = ? 
+                and l.order_item_id = i.id 
+                and i.order_id = o.id and o.status in ('CHECKED_OUT', 'PAID'));
 EOD;
     $stmt = mysqli_prepare($db, $query);
     mysqli_stmt_bind_param($stmt, "si", mb_strtolower($email_address, "utf8"), $conData->id);
