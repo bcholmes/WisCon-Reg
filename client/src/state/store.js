@@ -1,6 +1,6 @@
 import { createStore, combineReducers } from 'redux'
 import { ADD_AUTH_CREDENTIAL, LOGOUT } from './authActions';
-import { ADD_STRIPE_SECRET, ADD_TO_CART, CLEAR_CART } from './cartActions';
+import { ADD_STRIPE_SECRET, ADD_TO_CART, CLEAR_CART, REMOVE_FROM_CART } from './cartActions';
 import { SET_OFFERINGS } from './offeringActions';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -48,6 +48,14 @@ const cart = (state = cartInitialState, action) => {
                     ...state.items,
                     action.payload
                 ]
+            }
+        case REMOVE_FROM_CART: {
+            let item = action.payload;
+            let newItemList = state.items.filter(e => e.itemUUID !== item.itemUUID);
+            return {
+                ...state,
+                items: newItemList
+            }
             }
         case ADD_STRIPE_SECRET:
             return {

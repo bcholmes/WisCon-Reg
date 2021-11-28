@@ -1,6 +1,7 @@
 import store from './store';
 
 export const ADD_TO_CART = 'ADD_TO_CART';
+export const REMOVE_FROM_CART = 'REMOVE_FROM_CART';
 export const CLEAR_CART = 'CLEAR_CART';
 export const ADD_STRIPE_SECRET = 'ADD_STRIPE_SECRET';
 
@@ -15,6 +16,13 @@ export function addToCart(offering, name, values, uuid, amount) {
    return {
       type: ADD_TO_CART,
       payload
+   }
+}
+
+export function removeFromCart(item) {
+   return {
+      type: REMOVE_FROM_CART,
+      payload: item
    }
 }
 

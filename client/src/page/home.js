@@ -37,7 +37,7 @@ class Home extends Component {
                         <OfferingList key="offering"/>
                     </section>
                     <section className="col-lg-3">
-                        <Cart />
+                        <Cart edit={true}/>
                         <CheckoutButton onClick={() => this.showWaiver()}/>
                         <Notice />
                     </section>
