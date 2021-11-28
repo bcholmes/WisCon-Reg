@@ -145,8 +145,8 @@ function determine_links($baseUrl, $items, $count, $PAGE_SIZE) {
 }
 
 $PAGE_SIZE = 50;
-$term = $_REQUEST['term'];
-$page = $_REQUEST['page'];
+$term = array_key_exists('term', $_REQUEST) ? $_REQUEST['term'] : null;
+$page = array_key_exists('page', $_REQUEST) ?$_REQUEST['page'] : null;
 if (!$page) {
     $page = 0;
 } else {

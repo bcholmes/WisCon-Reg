@@ -1,3 +1,4 @@
+import { TEST_STRIPE_PUBLIC_KEY, PROD_STRIPE_PUBLIC_KEY } from "./secrets";
 
 const hostname = window && window.location && window.location.hostname;
 
@@ -39,9 +40,9 @@ function isTestEnvironment() {
 
 export function stripePublicKey() {
     if (isTestEnvironment()) {
-        return 'pk_test_51Ji4wMC2R9aJdAuoBn5Q1TasCjN2CFBlGLYK2aN50y1iJD7JRVEgG5AEhH6PvdQf32IYOCFfhvYavMMlBVq5atgn007JKQegmA';
+        return TEST_STRIPE_PUBLIC_KEY;
     } else {
-        return '';
+        return PROD_STRIPE_PUBLIC_KEY;
     }
 }
 

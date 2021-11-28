@@ -59,7 +59,7 @@ values ('WisCon', 'https://wiscon.net');
 
 
 insert into reg_con_info (name, perennial_con_id, con_start_date, con_end_date) 
-select 'WisCon 44', max(id), '2022-05-26', '2022-05-30'
+select 'WisCon 2022', max(id), '2022-05-26', '2022-05-30'
 from reg_perennial_con_info;
 
 create view reg_users as 
@@ -229,46 +229,48 @@ select max(id),
 1, 'The WisCon Member Assistance Fund supports anyone who needs financial assistance to attend'
 from reg_offering;
 
-create table reg_order (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    order_uuid varchar(36) NOT NULL,
-    status varchar(32) NOT NULL DEFAULT 'IN_PROGRESS',
-    creation_date TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_modified_date TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
-    payment_date TIMESTAMP NULL DEFAULT NULL,
-    payment_method varchar(32),
-    con_id INT NOT NULL,
-    FOREIGN KEY (con_id)
-        REFERENCES reg_con_info(id)
-        ON UPDATE RESTRICT ON DELETE CASCADE,
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `reg_order` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_uuid` varchar(36) NOT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'IN_PROGRESS',
+  `creation_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_modified_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `payment_date` timestamp NULL DEFAULT NULL,
+  `payment_method` varchar(32) DEFAULT NULL,
+  `con_id` int(11) NOT NULL,
+  `finalized_date` timestamp NULL DEFAULT NULL,
+  `confirmation_email` varchar(255) DEFAULT NULL,
+  `payment_intent_id` varchar(1024) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_order_con_id` (`con_id`),
+  CONSTRAINT `fk_order_con_id` FOREIGN KEY (`con_id`) REFERENCES `reg_con_info` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8;
 
-create table reg_order_item (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    offering_id INT NOT NULL,
-    order_id INT NOT NULL,
-    for_name varchar(255) NOT NULL,
-    email_address varchar(255) NULL DEFAULT NULL,
-    amount decimal(13,2) NOT NULL DEFAULT 0,
-    email_ok char(1),
-    volunteer_ok char(1),
-    snail_mail_ok char(1),
-    FOREIGN KEY (offering_id)
-        REFERENCES reg_offering(id)
-        ON UPDATE RESTRICT ON DELETE CASCADE,
-    FOREIGN KEY (order_id)
-        REFERENCES reg_order(id)
-        ON UPDATE RESTRICT ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `reg_order_item` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `offering_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `for_name` varchar(255) NOT NULL,
+  `email_address` varchar(255) DEFAULT NULL,
+  `item_uuid` varchar(36) NOT NULL,
+  `amount` decimal(13,2) DEFAULT NULL,
+  `email_ok` char(1) DEFAULT NULL,
+  `volunteer_ok` char(1) DEFAULT NULL,
+  `snail_mail_ok` char(1) DEFAULT NULL,
+  `street_line_1` varchar(1024) DEFAULT NULL,
+  `street_line_2` varchar(1024) DEFAULT NULL,
+  `city` varchar(255) DEFAULT NULL,
+  `state_or_province` varchar(255) DEFAULT NULL,
+  `zip_or_postal_code` varchar(255) DEFAULT NULL,
+  `country` varchar(1024) DEFAULT NULL,
+  `age` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `offering_id` (`offering_id`),
+  KEY `order_id` (`order_id`),
+  CONSTRAINT `reg_order_item_ibfk_1` FOREIGN KEY (`offering_id`) REFERENCES `reg_offering` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `reg_order_item_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `reg_order` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=130 DEFAULT CHARSET=utf8;
 
-alter table reg_order add column payment_intent_id varchar(1024);
-
-alter table reg_order_item add column street_line_1 varchar(1024);
-alter table reg_order_item add column street_line_2 varchar(1024);
-alter table reg_order_item add column city varchar(255);
-alter table reg_order_item add column state_or_province varchar(255);
-alter table reg_order_item add column zip_or_postal_code varchar(255);
-alter table reg_order_item add column country varchar(1024);
 
 alter table reg_offering add column address_required char(1) not null default 'N';
 
