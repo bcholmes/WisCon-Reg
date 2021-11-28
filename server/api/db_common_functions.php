@@ -98,7 +98,7 @@ function find_order_by_order_uuid($ini, $conData, $order_uuid) {
 function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     $query = <<<EOD
  SELECT 
-        o.id, o.status, o.payment_intent_id
+        o.id, o.status, o.payment_intent_id, o.payment_method
    FROM 
         reg_order o
   WHERE 
@@ -216,6 +216,25 @@ function mark_order_as_paid($db, $order_id) {
  UPDATE reg_order
     SET payment_date = now(),
         status = 'PAID'
+  WHERE id = ?;
+ EOD;
+
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order_id);
+
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function mark_order_as_cancelled($db, $order_id) {
+    $query = <<<EOD
+ UPDATE reg_order
+    SET status = 'CANCELLED'
   WHERE id = ?;
  EOD;
 

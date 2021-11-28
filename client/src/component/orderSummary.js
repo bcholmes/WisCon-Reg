@@ -33,6 +33,10 @@ class OrderSummary extends Component {
             content = (
                 <Alert variant="danger">{this.state.message}</Alert>
             );
+        } else if (this.state.order && this.state.order.status === 'CANCELLED') {
+            content = (
+                <Alert variant="info">This order has been cancelled.</Alert>
+            );
         } else if (this.state.order) {
             let total = 0;
             let currency = 'USD';

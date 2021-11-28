@@ -16,7 +16,7 @@ import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
 import { logout } from '../state/authActions';
 import { sdlc } from '../util/sdlcUtil';
-import OrderSummary from '../component/orderSummary';
+import AdminOrderSummary from '../component/adminOrderSummary';
 
 class RegistrationsPage extends Component {
 
@@ -114,7 +114,8 @@ class RegistrationsPage extends Component {
                         </Form>
                     </div>
                     <div className="col-md-6 text-right">
-                        <Button variant="secondary" onClick={() => this.downloadReport()}>Download</Button>
+                        <Button variant="secondary" onClick={() => this.refresh()}><i className="bi bi-arrow-clockwise"></i></Button>
+                        <Button variant="secondary" className="ml-2" onClick={() => this.downloadReport()}>Download</Button>
                     </div>
                 </div>
                 {spinner}
@@ -137,18 +138,13 @@ class RegistrationsPage extends Component {
                     {linkFooter}
                 </table>
 
-                <Modal show={this.state.showModal}  onHide={() => this.handleClose()} size="lg">
+                <Modal show={this.state.showModal}  onHide={() => this.handleClose()} size="xl">
                     <Modal.Header closeButton>
                     <Modal.Title>Order Review</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <OrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} />
+                        <AdminOrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} onUpdate={() => this.refresh()}/>
                     </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="primary" onClick={() => this.handleClose()}>
-                            OK
-                        </Button>
-                    </Modal.Footer>
                 </Modal>
                 <Footer />
             </Container>
@@ -284,19 +280,20 @@ class RegistrationsPage extends Component {
 
     loadDataWithFilter(term) {
         if (term) {
-            this.loadDataWithUrl(sdlc.serverUrl('/api/registrations_list.php') + '?term=' + term);
+            this.loadDataWithUrl('/api/registrations_list.php' + '?term=' + term);
         } else {
             this.loadData();
         }
     }
     loadData() {
-        this.loadDataWithUrl(sdlc.serverUrl('/api/registrations_list.php'));
+        this.loadDataWithUrl('/api/registrations_list.php');
     }
     loadDataWithUrl(url) {
         let state = this.state;
         this.setState({
             ...state,
-            loading: true
+            loading: true,
+            lastLoadedUrl: url
         });
 
         if (isAuthenticated()) {
@@ -329,6 +326,10 @@ class RegistrationsPage extends Component {
                 }
             });
         }
+    }
+
+    refresh() {
+        this.loadDataWithUrl(this.state.lastLoadedUrl);
     }
 }
 

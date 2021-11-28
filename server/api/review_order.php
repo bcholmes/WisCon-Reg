@@ -1,5 +1,18 @@
 <?php
-// Copyright (c) 2021 BC Holmes. All rights reserved. See copyright document for more details.
+// Copyright 2021 BC Holmes
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//    http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 // These functions provide support for common database queries.
 
 require_once("config.php");
@@ -54,7 +67,7 @@ function find_order_and_items_by_order_uuid($ini, $conData, $order_uuid, $locale
     } else {
         $query = <<<EOD
  SELECT 
-        o.id, o.status, o.confirmation_email, o.payment_method, o.finalized_date
+        o.id, o.status, o.confirmation_email, o.payment_method, o.finalized_date, o.payment_date
    FROM 
         reg_order o
   WHERE 
@@ -73,6 +86,12 @@ function find_order_and_items_by_order_uuid($ini, $conData, $order_uuid, $locale
 
                 $date = date_create_from_format('Y-m-d H:i:s', $row->finalized_date);
                 $date->setTimezone(new DateTimeZone('America/Chicago'));
+
+                $paymentDate = null;
+                if ($row->payment_date) {
+                    $paymentDate = date_create_from_format('Y-m-d H:i:s', $row->payment_date);
+                    $paymentDate->setTimezone(new DateTimeZone('America/Chicago'));
+                }
                 $items = find_order_items($db, $row->id);
                 if ($items === false) {
                     return false;
@@ -80,10 +99,14 @@ function find_order_and_items_by_order_uuid($ini, $conData, $order_uuid, $locale
                     $order = array(
                         "orderId" => $row->id,
                         "orderUuid" => $order_uuid,
+                        "status" => $row->status,
                         "confirmationEmail" => $row->confirmation_email,
+                        "paymentMethodKey" => $row->payment_method,
                         "paymentMethod" => format_payment_type_for_display($row->payment_method, $locale),
                         "finalizedDate" => date_format($date, 'c'),
                         "finalizedDateSimple" => date_format($date, 'M j h:i A T'),
+                        "paymentDate" => $paymentDate == null ? null : date_format($paymentDate, 'c'),
+                        "paymentDateSimple" => $paymentDate == null ? null : date_format($paymentDate, 'M j h:i A T'),
 
                         "items" => $items
                     );
