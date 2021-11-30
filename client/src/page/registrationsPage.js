@@ -60,7 +60,7 @@ class RegistrationsPage extends Component {
         }
 
         let rows = this.state.items ? this.state.items.map((item, i) => {
-            return (<tr key={item.id + '-' + i}  onClick={() => {this.openOrder(item)}} role="button">
+            return (<tr key={item.id + '-' + i}  onClick={() => {this.openOrder(item)}} role="button" className={this.isInactive(item) ? 'inactive-order' : ''}>
                 <td className="text-right">{item.id}</td>
                 <td><time dateTime={item.finalized_date}>{item.finalized_date_simple}</time></td>
                 <td>{item.title}</td>
@@ -149,6 +149,10 @@ class RegistrationsPage extends Component {
                 <Footer />
             </Container>
         );
+    }
+
+    isInactive(item) {
+        return item.status !== 'CHECKED_OUT' && item.status !== 'PAID';
     }
 
     renderLinks() {

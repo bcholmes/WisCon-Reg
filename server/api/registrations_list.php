@@ -42,7 +42,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
             ON 
                 i.offering_id = off.id
     WHERE o.con_id  = ?
-        AND o.status in ('CHECKED_OUT', 'PAID')
+        AND o.status != 'IN_PROGRESS'
         $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
     LIMIT $start, $pageSize
@@ -62,6 +62,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
                     "orderUuid" => $row->order_uuid,
                     "key" => create_order_key($row->id, $row->order_uuid, $row->confirmation_email),
                     "title" => $row->title,
+                    "status" => $row->status,
                     "paid" => ($row->status == 'PAID' ? "\"Yes\"" : "\"No\""),
                     "amount" => $row->amount,
                     "for" => $row->for_name,
@@ -105,7 +106,7 @@ function count_registrations($conData, $ini, $term) {
             ON 
                 i.offering_id = off.id
     WHERE o.con_id  = ?
-        AND o.status in ('CHECKED_OUT', 'PAID')
+      AND o.status != 'IN_PROGRESS'
         $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
     EOD;
@@ -167,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(
     }
     $result = array( "items" => $items, 
         "pagination" => array(
-            "start" => (count($items) > 0 ? 1 : 0),
-            "end" => count($items),
+            "start" => (count($items) > 0 ? 1 + ($page * $PAGE_SIZE) : 0),
+            "end" => count($items) + ($page * $PAGE_SIZE),
             "page" => $page,
             "totalRows" => $count
         ),

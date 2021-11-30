@@ -9,8 +9,6 @@ require_once("format_functions.php");
 
 $ini = read_ini();
 
-$conData = find_current_con($ini);
-
 function create_not_found_email($email_address, $con_name, $ini) {
     $reg_email = $ini['email']['reg_email'];
     $emailBody = <<<EOD
@@ -68,12 +66,8 @@ function create_order_review_email($ini, $email_address, $con_name, $orders, $ho
     return $emailBody;
 }
 
-function find_orders_with_email($ini, $conData, $email) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function find_orders_with_email($db, $conData, $email) {
+    $query = <<<EOD
  SELECT 
         o.id, o.order_uuid, o.confirmation_email
    FROM 
@@ -85,64 +79,69 @@ function find_orders_with_email($ini, $conData, $email) {
         AND o.con_id  = ?;
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "ssi", $email, $email, $conData->id);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            $orders = array();
-            while ($row = mysqli_fetch_object($result)) {
-                $order_data = array(
-                    "order_id" => $row->id,
-                    "order_uuid" => $row->order_uuid,
-                    "confirmation_email" => $row->confirmation_email
-                );
-                array_push($orders, $order_data);
-            }
-            return $orders;
-        } else {
-            mysqli_close($db);
-            return false;
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "ssi", $email, $email, $conData->id);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        $orders = array();
+        while ($row = mysqli_fetch_object($result)) {
+            $order_data = array(
+                "order_id" => $row->id,
+                "order_uuid" => $row->order_uuid,
+                "confirmation_email" => $row->confirmation_email
+            );
+            array_push($orders, $order_data);
         }
+        return $orders;
+    } else {
+        throw new DatabaseSqlException($query);
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$db = connect_to_db($ini);
+try {
+    $conData = find_current_con_with_db($db);
 
-    if ($conData) {
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-        $email = $data->email;
-        if ($email) {
-            $subject = "" . $conData->name . " Registration Lookup Request";
+        if ($conData) {
 
-            $orders = find_orders_with_email($ini, $conData, $email);
+            $json = file_get_contents('php://input');
+            $data = json_decode($json);
 
-            if ($orders) {
-                $email_name = find_name_by_email_address($ini, $conData, $email);
-                if (!$email_name) {
-                    $email_name = $email;
+            $email = $data->email;
+            if ($email) {
+                $subject = "" . $conData->name . " Registration Lookup Request";
+
+                $orders = find_orders_with_email($db, $conData, $email);
+
+                if ($orders) {
+                    $email_name = find_name_by_email_address($db, $conData, $email);
+                    if (!$email_name) {
+                        $email_name = $email;
+                    }
+                    send_email(create_order_review_email($ini, $email_name, $conData->name, $orders, $_SERVER['SERVER_NAME']), 
+                    $subject, [ $email => $email_name ]);
+                } else {
+                    send_email(create_not_found_email($email, $conData->name, $ini), $subject, 
+                        $email);
                 }
-                send_email(create_order_review_email($ini, $email_name, $conData->name, $orders, $_SERVER['SERVER_NAME']), 
-                $subject, [ $email => $email_name ]);
+                http_response_code(204);
             } else {
-                send_email(create_not_found_email($email, $conData->name, $ini), $subject, 
-                    $email);
+                http_response_code(400);
             }
-            http_response_code(204);
         } else {
-            http_response_code(400);
+            http_response_code(500);
         }
-    } else {
-        http_response_code(500);
-    }
 
-} else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(201);
-} else {
-    http_response_code(404);
+    } else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(201);
+    } else {
+        http_response_code(404);
+    }
+} finally {
+    $db->close();
 }
 
 ?>

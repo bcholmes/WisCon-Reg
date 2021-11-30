@@ -17,6 +17,7 @@ require_once('../vendor/autoload.php');
 
 require_once("config.php");
 require_once("db_common_functions.php");
+require_once("email_functions.php");
 require_once("jwt_functions.php");
 require_once("zambia_functions.php");
 
@@ -85,6 +86,29 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
     }
 }
 
+function send_marked_as_paid_email($ini, $db, $conData, $order) {
+    $email_name = find_name_by_email_address($db, $conData, $order->confirmation_email);
+    if (!$email_name) {
+        $email_name = $order->confirmation_email;
+    }
+    $emailBody = <<<EOD
+    <p>
+        Hello $email_name,
+    </p>
+    <p>
+        We just wanted to drop you a quick note to let you know that payment
+        was received for your order (Order number <b>$order->id</b>). We've
+        just updated our records, now.
+    </p>
+    <p>
+        Thanks!<br />
+        The System That Sends the Emails
+    </p>
+EOD;
+    send_email($emailBody, 'Your ' . $conData->name . ' order has been processed', [$order->confirmation_email => $email_name],
+        [$ini['email']['reg_email'] => 'Registration']);
+}
+
 
 $ini = read_ini();
 $db = connect_to_db($ini);
@@ -103,6 +127,7 @@ try {
 
                 if ($data['action'] === 'MARK_AS_PAID') {
                     mark_order_as_paid($db, $order->id);
+                    send_marked_as_paid_email($ini, $db, $conData, $order);
                 } else if ($data['action'] === 'CANCEL' && $order->status !== 'PAID') {
                     mark_order_as_cancelled($db, $order->id);
                     remove_order_registrations($db, $conData, $order->id);

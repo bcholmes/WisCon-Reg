@@ -15,7 +15,6 @@ class ReviewPage extends Component {
 
         const search = props.location.search;  
         const key = new URLSearchParams(search).get('key');
-console.log("key: " + key);
         this.state = {
             "orderId": new URLSearchParams(search).get('orderId'),
             "key": key

@@ -129,7 +129,7 @@ function find_order_by_order_uuid($ini, $conData, $order_uuid) {
 function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     $query = <<<EOD
  SELECT 
-        o.id, o.status, o.payment_intent_id, o.payment_method
+        o.id, o.status, o.payment_intent_id, o.payment_method, o.confirmation_email
    FROM 
         reg_order o
   WHERE 
@@ -154,12 +154,8 @@ function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     }
 }
 
-function find_name_by_email_address($ini, $conData, $email_address) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function find_name_by_email_address($db, $conData, $email_address) {
+    $query = <<<EOD
  SELECT 
         distinct i.for_name as name, count(*)
    FROM 
@@ -172,25 +168,21 @@ function find_name_by_email_address($ini, $conData, $email_address) {
   ORDER BY 2 desc, name;
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "si", $email_address, $conData->id);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            $name = false;
-            while ($row = mysqli_fetch_object($result)) {
-                $name = $row->name;
-                if ($name) {
-                    break;
-                }
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "si", $email_address, $conData->id);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        $name = false;
+        while ($row = mysqli_fetch_object($result)) {
+            $name = $row->name;
+            if ($name) {
+                break;
             }
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return $name;
-        } else {
-            mysqli_close($db);
-            return false;
         }
+        mysqli_stmt_close($stmt);
+        return $name;
+    } else {
+        throw new DatabaseSqlException($query);
     }
 }
 

@@ -19,6 +19,9 @@ function send_email($body, $subject, $to, $cc = null) {
 
     $ok = true;
     try {
+        if ($cc != null) {
+            $message->setCc($cc);
+        }
         $message->setTo($to);
     } catch (Swift_SwiftException $e) {
         $ok = FALSE;

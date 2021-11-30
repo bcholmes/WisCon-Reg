@@ -7,6 +7,11 @@ $dark: #2b2b2b;
 
 @import "../../node_modules/bootstrap/scss/bootstrap";
 
+tr.inactive-order td {
+    text-decoration: line-through;
+    color: $gray-500
+}
+
 @media (pointer: fine) {
     .visible-on-hover button.btn {
         display: none;

@@ -91,7 +91,6 @@ function find_all_membership_order_items($db, $order) {
                 "title" => $row->title
             );
             if (($row->address_required == 'Y') || ($row->snail_mail_ok == 'Y')) {
-                error_log("adding an address");
                 $address = array(
                     "street_line_1" => $row->street_line_1,
                     "street_line_2" => $row->street_line_2,

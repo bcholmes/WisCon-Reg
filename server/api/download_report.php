@@ -41,7 +41,7 @@ try {
                 ON 
                     i.offering_id = off.id
         WHERE o.con_id  = ?
-            AND o.status in ('CHECKED_OUT', 'PAID')
+            AND o.status != 'IN_PROGRESS'
         ORDER BY o.finalized_date, o.id, i.id
     EOD;
 
@@ -56,8 +56,17 @@ try {
                 
                 $result = mysqli_stmt_get_result($stmt);
                 while ($row = mysqli_fetch_object($result)) {
+                    $paid = 'No';
+                    if ($row->status === 'PAID') {
+                        $paid = 'Yes';
+                    } else if ($row->status === 'CANCELLED') {
+                        $paid = 'Cancelled';
+                    } else if ($row->status === 'REFUNDED') {
+                        $paid = 'Refunded';
+                    }
+
                     echo "\"" . $row->id . "\",\"" . $row->confirmation_email . "\",\"" . $row->title . "\",\"" . $row->finalized_date . "\"," . 
-                        ($row->status == 'PAID' ? "\"Yes\"" : "\"No\"") . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" . 
+                        $paid . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" . 
                         format_payment_type_for_display($row->payment_method, $locale) . "\"";
                     if ($row->add_prompts == 'N') {
                         echo ",\"\",\"\",\"\"";

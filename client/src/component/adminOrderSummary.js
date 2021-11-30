@@ -41,6 +41,10 @@ class AdminOrderSummary extends Component {
             content = (
                 <Alert variant="info">This order has been cancelled.</Alert>
             );
+        } else if (this.state.order && this.state.order.status === 'REFUNDED') {
+            content = (
+                <Alert variant="info">This order has been refunded.</Alert>
+            );
         } else if (this.state.order) {
             let total = 0;
             let currency = 'USD';
