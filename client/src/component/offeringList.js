@@ -52,6 +52,10 @@ class OfferingList extends Component {
                     <Spinner animation="border" />
                 </div>
             );
+        } else if (this.state.offerings.regClosed) {
+            return (
+                <Alert variant="warning">Aw, drat. Registration for WisCon is closed at this time.</Alert>
+            )
         } else {
 
             let offeringList = this.state.offerings.items.map((o) => {

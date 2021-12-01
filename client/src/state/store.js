@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const offeringInitialState = {
     loading: true,
-    reg_closed: false,
+    regClosed: false,
     items: []
 }
 
@@ -31,8 +31,8 @@ const offerings = (state = offeringInitialState, action) => {
                 ...state,
                 loading: false,
                 message: action.payload.message,
-                items: action.payload.items,
-                reg_closed: action.payload.reg_closed
+                items: action.payload.items || [],
+                regClosed: action.payload.reg_closed
             }
         default:
             return state;
