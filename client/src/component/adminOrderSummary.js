@@ -66,24 +66,24 @@ class AdminOrderSummary extends Component {
                 </tr>)
             }) : undefined;
 
-
             let updateForm = (this.state.updateMode) 
                 ? (<Form onSubmit={(e) => this.updateOrder(e)}>
                     <Form.Group controlId="action" className="row">
                         <div className="offset-md-3 col-md-6">
                             <Form.Label>Update action:</Form.Label>
                             <Form.Control as="select" onChange={(e) => this.setFormValue("action", e.target.value)} key="action">
-                                <option value="">Choose...</option>
+                                <option value="">Choose update action...</option>
                                 {this.allUpdateActions().map(e => { return (<option value={e.value} key={e.value}>{e.text}</option>); } )}
                             </Form.Control>
                         </div>
                     </Form.Group>
+                    {this.createDonationChoice()}
 
                     <div className="text-right">
                         <Button variant="link" onClick={() => this.updateMode(false)} >
                             Cancel
                         </Button>
-                        <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.state.values['action']}>
+                        <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.isUpdateEnabled()}>
                             Update
                         </Button>
                     </div>
@@ -149,6 +149,23 @@ class AdminOrderSummary extends Component {
         return content;
     }
 
+    createDonationChoice() {
+        if (this.state.updateMode && this.state.values && this.state.values.action === 'CONVERT_TO_DONATION') {
+            return (<Form.Group controlId="donationType" className="row">
+                        <div className="offset-md-3 col-md-6">
+                            <Form.Label className="sr-only">Donation type:</Form.Label>
+                            <Form.Control as="select" onChange={(e) => this.setFormValue("donationType", e.target.value)} key="donationType">
+                                <option value="">Choose donation type...</option>
+                                {this.allDonationOfferings().map(o => { return (<option value={o.id} key={o.id}>{o.title}</option>); } )}
+                            </Form.Control>
+                        </div>
+                    </Form.Group>
+            );
+        } else {
+            return undefined;
+        }
+    }
+
     resendEmail() {
         axios.post('/api/resend_email.php', { orderId: this.state.order.orderUuid}, {
             headers: {
@@ -171,6 +188,11 @@ class AdminOrderSummary extends Component {
         });
     }
 
+    allDonationOfferings() {
+        let donations = store.getState().offerings.items.filter(o => o.isDonation);
+        return donations;
+    }
+
     updateMode(value) {
         this.setState({
             ...this.state,
@@ -183,11 +205,18 @@ class AdminOrderSummary extends Component {
         let value = this.state.values;
         let newValue = { ...value };
         newValue[formName] = formValue;
-        console.log(newValue);
         this.setState({
             ...this.state,
             values: newValue
         });
+    }
+
+    isUpdateEnabled() {
+        if (this.state.values['action'] === 'CONVERT_TO_DONATION' && !this.state.values['donationType']) {
+            return false;
+        } else {
+            return this.state.values['action'];
+        }
     }
 
     allUpdateActions() {
@@ -199,9 +228,11 @@ class AdminOrderSummary extends Component {
             } else if (this.state.order.paymentMethodKey === 'CARD') {
                 result.push({ "value": "REFUND", "text": "Refund credit card"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
+                result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
             } else {
                 result.push({ "value": "REFUND", "text": "Refund (manual return)"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
+                result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
             }
             return result;
         } else {

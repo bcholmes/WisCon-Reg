@@ -67,7 +67,7 @@ EOD;
     }
 }
 
-function compose_email($ini, $db, $conData, $email_address, $payment_method, $order, $locale, $resend = false) {
+function compose_email($ini, $db, $conData, $email_address, $payment_method, $order, $locale, $resend = false, $update = false) {
 
     $cheque = format_payment_type_for_display('CHEQUE', $locale);
 
@@ -77,6 +77,7 @@ function compose_email($ini, $db, $conData, $email_address, $payment_method, $or
         $reg_email = $ini['email']['reg_email'];
 
         $resend_text = $resend ? "This email is a resend of a previously-sent confirmation." : "";
+        $update_text = $update ? "This email reflects some changes that Registration has made to your order, so please review it carefully. " : "";
 
         $payment_text = "<p>You have chosen to pay for these items using a credit card.</p>";
         if ($payment_method === 'CASH') {
@@ -125,8 +126,9 @@ EOD;
         $payment_text
         $lines
         <p>
+            $update_text
             Please reach out to <a href="mailto:$reg_email">Registration</a> if you 
-            have questions about this registration or need assistance.
+            have questions about this order or need assistance.
         </p>
         <p>
             Thanks,<br />

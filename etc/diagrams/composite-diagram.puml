@@ -13,11 +13,11 @@ skinparam artifact<<external>> {
     BorderColor black
 }
 
-title ==Zambia C4 Composite (aka Container) Diagram
+title ==Registration C4 Composite Artifact/"Container" Diagram
 
 IwdRectangle("Users", "userGroup", "", "", "", "", "light") {
 
-    IwdUser("Participant", "participant", "The participant registered for a WisCon membership")
+    IwdUser("Participant", "participant", "The participant registers for a WisCon membership")
 
     IwdIconOnly("Browser", "browser1", "", <img:https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/main/icons/browser.png> ,"A standard web browser is used to render the web app.")
 
@@ -26,7 +26,7 @@ IwdRectangle("Users", "userGroup", "", "", "", "", "light") {
     IwdIconOnly("Browser", "browser2", "", <img:https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/main/icons/browser.png> ,"A standard web browser is used to render the web app.")
 }
 
-IwdRectangle("WisCon Online Reg", "registration", "React/PHP Application", $react, "WisCon's Online Registration system is a relatively WisCon-specific registration system", "System") 
+IwdRectangle("WisCon Online Reg", "registration", "React/PHP Application", $react, "WisCon's Online Registration system records registrations and processes payments through Stripe", "System") 
 
 IwdRectangle("Zambia System", "zambiaContext", "", "", "", "", "exploded") {
 
@@ -38,6 +38,8 @@ IwdRectangle("Zambia System", "zambiaContext", "", "", "", "", "exploded") {
 
 IwdRectangle("Email Server", "email", "SMTP Server", $envelope, "The email server provides standard SMTP access for registration notifications and the like.", "System", "external") 
 
+IwdRectangle("Stripe", "stripe", "Payment Gateway", $server, "The Stripe system processes credit-card payments and deposits into the WisCon bank account", "System", "external") 
+
 IwdArrow(participant, browser1, "uses", "", "right")
 IwdArrow(participant, concom, "", "", "[hidden]down")
 IwdArrow(browser1, registration, "uses", "", "right")
@@ -47,5 +49,6 @@ IwdArrow(zambia, db, "reads/writes", "", "right")
 IwdArrow(registration, email, "sends email via", "", "down")
 IwdArrow(participant, concom, "", "", "[hidden]down")
 IwdArrow(registration, db, "reads/writes", "", "down")
+IwdArrow(registration, stripe, "processes payments", "", "down")
 
 @enduml

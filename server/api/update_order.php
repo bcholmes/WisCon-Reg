@@ -18,6 +18,8 @@ require_once('../vendor/autoload.php');
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("email_functions.php");
+require_once("email_composer.php");
+require_once("format_functions.php");
 require_once("jwt_functions.php");
 require_once("zambia_functions.php");
 
@@ -86,6 +88,24 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
     }
 }
 
+function convert_to_donation($db, $donationType, $orderId) {
+    $query = <<<EOD
+        UPDATE reg_order_item 
+        SET offering_id = ? 
+    WHERE order_id = ? 
+      AND offering_id NOT IN (select id from reg_offering where is_donation = 'Y');
+    EOD;
+
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $donationType, $orderId);
+
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+    } else {
+        throw new DatabaseSqlException("The Update could not be processed: $query");
+    }
+}
+
 function send_marked_as_paid_email($ini, $db, $conData, $order) {
     $email_name = find_name_by_email_address($db, $conData, $order->confirmation_email);
     if (!$email_name) {
@@ -135,9 +155,17 @@ try {
                     process_refund($ini, $db, $order);
                     remove_order_registrations($db, $conData, $order->id);
                     http_response_code(201);
+                } else if ($data['action'] === 'CONVERT_TO_DONATION' && $order->status === 'PAID' && $data['donationType']) {
+                    convert_to_donation($db, $data['donationType'], $order->id);
+                    remove_order_registrations($db, $conData, $order->id);
+                    compose_email($ini, $db, $conData, $order->confirmation_email, $order->payment_method, $order, get_client_locale(), false, true);
+                    http_response_code(201);
                 } else if ($data['action'] === 'DEFER') {
                     $nextCon = find_next_con($db);
                     defer_order_to_later($db, $conData, $nextCon, $order->id);
+                    http_response_code(201);
+                } else {
+                    http_response_code(400);
                 }
             } else {
                 http_response_code(409);
