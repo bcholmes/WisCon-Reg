@@ -53,7 +53,7 @@ class Cart extends Component {
                     </div>
                     <div>
                         <div className="text-right"><span className="text-muted">{formatAmount(e.amount, e.offering.currency)}</span></div>
-                        <div className="text-right" style={{ 'min-height': '1.75rem'}}>{removeButton}</div>
+                        <div className="text-right" style={{ 'minHeight': '1.75rem'}}>{removeButton}</div>
                     </div>
                 </li>);
             }

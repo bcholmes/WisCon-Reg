@@ -284,7 +284,7 @@ class RegistrationsPage extends Component {
 
     loadDataWithFilter(term) {
         if (term) {
-            this.loadDataWithUrl('/api/registrations_list.php' + '?term=' + term);
+            this.loadDataWithUrl('/api/registrations_list.php?term=' + term);
         } else {
             this.loadData();
         }

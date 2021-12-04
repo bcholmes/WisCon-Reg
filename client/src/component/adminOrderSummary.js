@@ -10,6 +10,8 @@ import Spinner from 'react-bootstrap/Spinner';
 import store from '../state/store'
 import { withRouter } from "react-router";
 
+import SimpleAlert from './simpleAlert';
+
 import {formatAmount} from '../util/numberUtil';
 
 class AdminOrderSummary extends Component {
@@ -33,9 +35,9 @@ class AdminOrderSummary extends Component {
                         <Spinner animation="border" />
                     </div>
             );
-        } else if (this.state.message) {
+        } else if (!this.state.order && this.state.message) {
             content = (
-                <Alert variant="danger">{this.state.message}</Alert>
+                <SimpleAlert message={this.state.message} />
             );
         } else if (this.state.order && this.state.order.status === 'CANCELLED') {
             content = (
@@ -87,7 +89,10 @@ class AdminOrderSummary extends Component {
                     </div>
                 </Form>)
                 : (<div className="text-right">
-                <Button variant="outline-primary" onClick={() => this.updateMode(true)} key="update-button">
+                <Button variant="outline-primary" onClick={() => this.resendEmail()} key="resend-button">
+                    Resend email
+                </Button>
+                <Button variant="outline-primary ml-3" onClick={() => this.updateMode(true)} key="update-button">
                     Update
                 </Button>
             </div>);
@@ -95,6 +100,7 @@ class AdminOrderSummary extends Component {
             let paymentDate = this.state.order.paymentDate ? (<time dateTime={this.state.order.paymentDate}>{this.state.order.paymentDateSimple}</time>) : undefined;
             content = (
                 <section>
+                    <SimpleAlert message={this.state.message} />
                     <h1>Order Number #{this.state.order.orderId}</h1>
                     <table className="mb-3">
                         <tbody>
@@ -143,10 +149,33 @@ class AdminOrderSummary extends Component {
         return content;
     }
 
+    resendEmail() {
+        axios.post('/api/resend_email.php', { orderId: this.state.order.orderUuid}, {
+            headers: {
+                "Authorization": "Bearer " + store.getState().auth.jwt
+            }
+        })
+        .then(res => {
+            let message = { severity: "success", text: "Email sent." }
+            this.setState({
+                loading: false,
+                message: message
+            })
+        })
+        .catch(error => {
+            let message = { severity: "danger", text: "There was an error trying to send email for the specified order." }
+            this.setState({
+                loading: false,
+                message: message
+            })
+        });
+    }
+
     updateMode(value) {
         this.setState({
             ...this.state,
-            updateMode: value
+            updateMode: value,
+            message: null
         })
     }
 
@@ -195,7 +224,7 @@ class AdminOrderSummary extends Component {
             }
         })
         .catch(error => {
-            let message = "There was an error trying to get the specified order."
+            let message = { severity: "danger", text: "There was an error trying to update the specified order." }
             this.setState({
                 loading: false,
                 message: message
@@ -204,7 +233,7 @@ class AdminOrderSummary extends Component {
     }
 
     fetchOrder(orderId, key) {
-        axios.get('/api/review_order.php' + '?orderId=' + orderId + '&key=' + key)
+        axios.get('/api/review_order.php?orderId=' + orderId + '&key=' + key)
             .then(res => {
                 this.setState({
                     loading: false,
@@ -214,7 +243,7 @@ class AdminOrderSummary extends Component {
                 })
             })
             .catch(error => {
-                let message = "There was an error trying to get the specified order."
+                let message = { severity: "danger", text: "There was an error trying to get the specified order." }
                 this.setState({
                     loading: false,
                     message: message

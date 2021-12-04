@@ -2,6 +2,11 @@
 // Copyright (c) 2021 BC Holmes. All rights reserved. See copyright document for more details.
 // This function supports formatting datatypes (monetary amounts, "enums", etc.) for view in the front-end.
 
+function get_client_locale() {
+    $locale = array_key_exists('HTTP_ACCEPT_LANGUAGE', $_SERVER) ? locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']) : locale_get_default();
+    return $locale;
+}
+
 function format_monetary_amount($value, $currency) {
     $value = number_format($value, 2);
     $amount = $currency . " " . $value;
