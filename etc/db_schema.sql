@@ -328,3 +328,5 @@ create table reg_program_link (
         REFERENCES `Participants`(`badgeid`)
         ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+alter table reg_offering add column is_donation char(1) not null default 'N';

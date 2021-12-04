@@ -16,3 +16,10 @@ with a Zambia instance so that we can delegate user management to Zambia).
 PHP because that's what Zambia was using
 * the code uses Stripe as a payment gateway. We also support the idea of 
 members sending cheques and/or paying cash in person at the door.
+
+## Architecture
+
+The following diagram provides a high-level architecture for the Wiscon Online 
+Registration system:
+
+![Online Registration](./etc/diagrams/composite-diagram.png)

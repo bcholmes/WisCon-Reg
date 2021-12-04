@@ -1,0 +1,51 @@
+@startuml
+!include https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/master/iwd_basic_styles.puml
+!define TUPADR3 https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.3.0
+!includeurl TUPADR3/devicons/mysql.puml
+!includeurl TUPADR3/devicons/php.puml
+!includeurl TUPADR3/devicons/react.puml
+!includeurl TUPADR3/font-awesome/envelope.puml
+!includeurl TUPADR3/font-awesome/mobile.puml
+!includeurl TUPADR3/font-awesome/server.puml
+
+skinparam artifact<<external>> {
+    BackgroundColor $IWD_SAND
+    BorderColor black
+}
+
+title ==Zambia C4 Composite (aka Container) Diagram
+
+IwdRectangle("Users", "userGroup", "", "", "", "", "light") {
+
+    IwdUser("Participant", "participant", "The participant registered for a WisCon membership")
+
+    IwdIconOnly("Browser", "browser1", "", <img:https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/main/icons/browser.png> ,"A standard web browser is used to render the web app.")
+
+    IwdUser("Registration Staff", "concom", "The registration staff tracks registrations and periodically updates records manually, as required.")
+
+    IwdIconOnly("Browser", "browser2", "", <img:https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/main/icons/browser.png> ,"A standard web browser is used to render the web app.")
+}
+
+IwdRectangle("WisCon Online Reg", "registration", "React/PHP Application", $react, "WisCon's Online Registration system is a relatively WisCon-specific registration system", "System") 
+
+IwdRectangle("Zambia System", "zambiaContext", "", "", "", "", "exploded") {
+
+    IwdArtifact("Zambia", "zambia", "PHP Application", $php, "Zambia manages sessions and provides both participant and staff access to the system.", "System", "external") 
+
+    IwdDatabase("Zambia Database", "db", "MySQL", $mysql, "The Zambia database stores data about participants, sessions, assignments, and other programming data.")
+
+}
+
+IwdRectangle("Email Server", "email", "SMTP Server", $envelope, "The email server provides standard SMTP access for registration notifications and the like.", "System", "external") 
+
+IwdArrow(participant, browser1, "uses", "", "right")
+IwdArrow(participant, concom, "", "", "[hidden]down")
+IwdArrow(browser1, registration, "uses", "", "right")
+IwdArrow(concom, browser2, "uses", "", "right")
+IwdArrow(browser2, registration, "uses", "", "right")
+IwdArrow(zambia, db, "reads/writes", "", "right")
+IwdArrow(registration, email, "sends email via", "", "down")
+IwdArrow(participant, concom, "", "", "[hidden]down")
+IwdArrow(registration, db, "reads/writes", "", "down")
+
+@enduml

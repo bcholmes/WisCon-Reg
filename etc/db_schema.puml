@@ -38,11 +38,12 @@ entity reg_offering {
   minimum_price : numeric(13,2)
 * suggested_price : numeric(13,2)
   maximum_price : numeric(13,2)
-* description: varchar(1024),
-* is_membership: char(1),
-* add_prompts: char(1),
-* emphasis: char(1),
+* description: varchar(1024)
+* is_membership: char(1)
+* add_prompts: char(1)
+* emphasis: char(1)
 * email_required: varchar(16)
+* is_donation: char(1)
 }
 
 entity reg_offering_highlight {
@@ -70,7 +71,14 @@ entity reg_order_item {
 * offering_id : INT
 * amount: numeric(13,2)
 * name: varchar(255)
-* email: varchar(255)
+  email: varchar(255)
+  street_line_1: varchar(255)
+  street_line_2: varchar(255)
+  city: varchar(255)
+  state_or_province: varchar(255)
+  zip_or_postal_code: varchar(255)
+  country: varchar(255)
+  age: varchar(255)
 }
 
 entity reg_admin_user {
