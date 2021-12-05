@@ -26,7 +26,9 @@ IwdRectangle("Users", "userGroup", "", "", "", "", "light") {
     IwdIconOnly("Browser", "browser2", "", <img:https://raw.githubusercontent.com/Intelliware/iwd-plantuml-styles/main/icons/browser.png> ,"A standard web browser is used to render the web app.")
 }
 
-IwdRectangle("WisCon Online Reg", "registration", "React/PHP Application", $react, "WisCon's Online Registration system records registrations and processes payments through Stripe", "System") 
+IwdArtifact("WisCon Online Reg Web App", "registrationWeb", "React Application", $react, "WisCon's Online Registration web app provides the UI that allows users to register for the con.", "System") 
+
+IwdArtifact("WisCon Online Reg", "registration", "PHP Application", $php, "WisCon's Online Registration system records registrations and processes payments through Stripe", "System") 
 
 IwdRectangle("Zambia System", "zambiaContext", "", "", "", "", "exploded") {
 
@@ -42,13 +44,15 @@ IwdRectangle("Stripe", "stripe", "Payment Gateway", $server, "The Stripe system 
 
 IwdArrow(participant, browser1, "uses", "", "right")
 IwdArrow(participant, concom, "", "", "[hidden]down")
-IwdArrow(browser1, registration, "uses", "", "right")
+IwdArrow(browser1, registrationWeb, "uses", "HTTPS", "right")
 IwdArrow(concom, browser2, "uses", "", "right")
-IwdArrow(browser2, registration, "uses", "", "right")
-IwdArrow(zambia, db, "reads/writes", "", "right")
-IwdArrow(registration, email, "sends email via", "", "down")
+IwdArrow(browser2, registrationWeb, "uses", "HTTPS", "right")
+IwdArrow(zambia, db, "reads/writes", "MySQL Protocol", "right")
+IwdArrow(registration, email, "sends email via", "SMTP", "down")
 IwdArrow(participant, concom, "", "", "[hidden]down")
-IwdArrow(registration, db, "reads/writes", "", "down")
-IwdArrow(registration, stripe, "processes payments", "", "down")
+IwdArrow(registrationWeb, registration, "reads/writes", "REST/Json", "down")
+IwdArrow(registration, db, "reads/writes", "MySQL Protocol", "down")
+IwdArrow(registrationWeb, stripe, "processes payments", "HTTPS", "down")
+IwdArrow(registration, stripe, "processes payments", "HTTPS", "down")
 
 @enduml
