@@ -20,6 +20,16 @@ function get_client_locale() {
     return $locale;
 }
 
+function convert_database_date_to_date($db_date) {
+    if ($db_date) {
+        $date = date_create_from_format('Y-m-d H:i:s', $db_date);
+        $date->setTimezone(new DateTimeZone('America/Chicago'));
+        return $date;
+    } else {
+        return null;
+    }
+}
+
 function format_monetary_amount($value, $currency) {
     $value = number_format($value, 2);
     $amount = $currency . " " . $value;

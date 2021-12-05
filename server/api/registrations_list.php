@@ -83,7 +83,7 @@ function find_registrations($conData, $ini, $term, $page, $pageSize) {
                     "payment_method" => format_payment_type_for_display($row->payment_method, $locale)
                 );
                 if ($row->finalized_date) {
-                    $date = date_create_from_format('Y-m-d H:i:s', $row->finalized_date);
+                    $date = convert_database_date_to_date($row->finalized_date);
                     $current['finalized_date'] = date_format($date, 'c');
                     $current['finalized_date_simple'] = date_format($date, 'M j H:i');
 //                    $current['finalized_date'] = $row->finalized_date;

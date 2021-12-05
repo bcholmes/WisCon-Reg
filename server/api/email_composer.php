@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use function PHPSTORM_META\map;
+
 require_once("db_common_functions.php");
 require_once("email_functions.php");
 require_once("format_functions.php");
@@ -36,7 +38,6 @@ EOD;
     $stmt = mysqli_prepare($db, $query);
     $currency = null;
     mysqli_stmt_bind_param($stmt, "i", $order->id);
-    mysqli_set_charset($db, "utf8");
     if (mysqli_stmt_execute($stmt)) {
         $result = mysqli_stmt_get_result($stmt);
 
@@ -66,6 +67,93 @@ EOD;
         throw new DatabaseSqlException("The Select statement could not be executed");
     }
 }
+
+function find_donations_in_order($db, $order) {
+    $query = <<<EOD
+    SELECT 
+            i.amount, off.title, off.currency, off.short_name
+        FROM 
+        reg_order_item i
+        LEFT OUTER JOIN reg_offering off
+            ON 
+                i.offering_id = off.id
+        WHERE i.order_id  = ?
+          AND off.is_donation = 'Y'
+        ORDER BY i.id
+EOD;
+    $donations = array();
+    $currency = null;
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $order->id);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_object($result)) {
+            $currency = $row->currency;
+            $key = $row->short_name ? $row->short_name : $row->title;
+            if (array_key_exists($key, $donations)) {
+                $amount = $donations[$key];
+                $amount = $amount + $row->amount;
+                $donations[$key] = $amount;
+            } else {
+                $donations[$key] = $row->amount;     
+            }
+        }
+        mysqli_stmt_close($stmt);
+        return array("to" => $donations, "currency" => $currency);
+    } else {
+        throw new DatabaseSqlException("Query could not be processed: $query");
+    }
+}
+
+function donation_tax_clause($db, $order) {
+
+    $donations = find_donations_in_order($db, $order);
+
+    if (count($donations['to']) == 0) {
+        return "";
+    } else {
+        $gift = "";
+        $currency = $donations['currency'];
+        $total = 0.00;
+        foreach ($donations['to'] as $name => $amount) {
+            if (mb_strlen($gift) > 0) {
+                $gift .= " and ";
+            }
+            $gift .= format_monetary_amount($amount, $currency);
+            $gift .= " to the ";
+            $gift .= $name;
+
+            $total += $amount;
+        }
+
+        if (count($donations['to']) > 1) {
+            $gift .= " for a total of ";
+            $gift .= format_monetary_amount($total, $currency);
+        }
+
+        $dateClause = "";
+        if ($order->payment_date) {
+            $date = convert_database_date_to_date($order->payment_date);
+            $dateClause = " which we received on " . date_format($date, 'M j H:i e');
+        } else {
+            $date = convert_database_date_to_date($order->finalized_date);
+            $dateClause = " which was pledged on " . date_format($date, 'M j H:i e');
+        }
+        $taxClause = <<<EOD
+        <p>SF3, WisCon's parent not-for-profit, would like to thank you for your gift of $gift$dateClause. 
+        SF3 is a 501(c)(3) tax-exempt organization as recognized by the 
+        Internal Revenue Service (EIN 39-1256799). No goods or services, in whole or in part, were 
+        received in exchange for this contribution; therefore, the full amount of your gift is 
+        tax-deductible if you pay taxes in the United States. This note is provided by SF3 in order 
+        to express our gratitude and to comply with the rules and regulations promulgated by the US 
+        Internal Revenue Service. If you pay taxes in the United States, please retain this email 
+        with your tax records.</p>
+    EOD;
+        return $taxClause;
+    }
+}
+
 
 function compose_email($ini, $db, $conData, $email_address, $payment_method, $order, $locale, $resend = false, $update = false) {
 
@@ -111,6 +199,8 @@ EOD;
             $to = [ $email_address => $addressee ];
         }
 
+        $taxClause = donation_tax_clause($db, $order);
+
         $emailBody = <<<EOD
         <p>
             Hello $addressee,
@@ -125,6 +215,7 @@ EOD;
         </p>
         $payment_text
         $lines
+        $taxClause
         <p>
             $update_text
             Please reach out to <a href="mailto:$reg_email">Registration</a> if you 

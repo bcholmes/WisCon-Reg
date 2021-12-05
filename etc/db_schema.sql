@@ -330,3 +330,4 @@ create table reg_program_link (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 alter table reg_offering add column is_donation char(1) not null default 'N';
+alter table reg_offering add column short_name varchar(255);

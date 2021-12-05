@@ -17,45 +17,48 @@ require_once("config.php");
 require_once("db_common_functions.php");
 
 $ini = read_ini();
+$db = connect_to_db($ini);
+try {
 
-$conData = find_current_con($ini);
+    $conData = find_current_con_with_db($db);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($conData) {
 
-    if ($conData) {
+            $json = file_get_contents('php://input');
+            $data = json_decode($json);
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json);
+            $order_uuid = $data->orderId;
+            if ($data->values && $data->offering) {
 
-        $order_uuid = $data->orderId;
-        if ($data->values && $data->offering) {
+                $order = find_order_by_order_uuid_with_db($db, $conData, $order_uuid);
 
-            $order = find_order_by_order_uuid($ini, $conData, $order_uuid);
-
-            if ($order == null) {
-                $order = create_order_with_order_uuid($ini, $conData, $order_uuid);
-            }
-            
-            if ($order) {
-                if (create_order_item_with_uuid($ini, $conData, $order->id, $data->values, $data->offering, $data->itemUUID)) {
-                    http_response_code(201);
+                if ($order == null) {
+                    $order = create_order_with_order_uuid($db, $conData, $order_uuid);
+                }
+                
+                if ($order) {
+                    if (create_order_item_with_uuid($db, $conData, $order->id, $data->values, $data->offering, $data->itemUUID)) {
+                        http_response_code(201);
+                    } else {
+                        http_response_code(500);
+                    }
                 } else {
                     http_response_code(500);
                 }
             } else {
-                http_response_code(500);
+                http_response_code(400);
             }
         } else {
-            http_response_code(400);
+            http_response_code(500);
         }
+
+    } else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(201);
     } else {
-        http_response_code(500);
+        http_response_code(404);
     }
-
-} else if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(201);
-} else {
-    http_response_code(404);
+} finally {
+    $db->close();
 }
-
 ?>

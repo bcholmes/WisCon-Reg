@@ -103,46 +103,10 @@ function find_current_con($db_ini) {
     }
 }
 
-function find_order_by_order_uuid($ini, $conData, $order_uuid) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
- SELECT 
-        o.id, o.status, o.payment_intent_id
-   FROM 
-        reg_order o
-  WHERE 
-        o.order_uuid = ? AND
-        o.con_id  = ?;
- EOD;
-
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 1) {
-                $dbobject = mysqli_fetch_object($result);
-                mysqli_stmt_close($stmt);
-                mysqli_close($db);
-                return $dbobject;
-            } else {
-                mysqli_close($db);
-                return null;
-            }
-        } else {
-            mysqli_close($db);
-            return false;
-        }
-    }
-}
-
 function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     $query = <<<EOD
  SELECT 
-        o.id, o.status, o.payment_intent_id, o.payment_method, o.confirmation_email
+        o.id, o.status, o.payment_intent_id, o.payment_method, o.confirmation_email, o.payment_date, o.finalized_date
    FROM 
         reg_order o
   WHERE 
@@ -150,7 +114,6 @@ function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
         o.con_id  = ?;
  EOD;
 
-    mysqli_set_charset($db, "utf8");
     $stmt = mysqli_prepare($db, $query);
     mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
     if (mysqli_stmt_execute($stmt)) {
@@ -199,30 +162,23 @@ function find_name_by_email_address($db, $conData, $email_address) {
     }
 }
 
-function create_order_with_order_uuid($ini, $conData, $order_uuid) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function create_order_with_order_uuid($db, $conData, $order_uuid) {
+    $query = <<<EOD
  INSERT
         INTO reg_order (order_uuid, con_id)
  VALUES 
         (?, ?);
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
 
-        if ($stmt->execute()) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return find_order_by_order_uuid($ini, $conData, $order_uuid);
-        } else {
-            mysqli_close($db);
-            return false;
-        }
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return find_order_by_order_uuid_with_db($db, $conData, $order_uuid);
+    } else {
+        throw new DatabaseSqlException("Insert could not be processed: $query");
     }
 }
 
@@ -315,12 +271,8 @@ function boolean_value_from($value) {
     }
 }
 
-function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offering, $item_uuid) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function create_order_item_with_uuid($db, $conData, $orderId, $values, $offering, $item_uuid) {
+    $query = <<<EOD
  INSERT
         INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, 
         street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id)
@@ -330,29 +282,25 @@ function create_order_item_with_uuid($ini, $conData, $orderId, $values, $offerin
    and  o.con_id = ?;
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
-            boolean_value_from($values->newsletter != null ? $values->newsletter : false),
-            boolean_value_from($values->volunteer != null ? $values->volunteer : false),
-            boolean_value_from($values->snailMail != null ? $values->snailMail : false),
-            $values->streetLine1,
-            $values->streetLine2,
-            $values->city,
-            $values->stateOrProvince,
-            $values->country,
-            $values->zipOrPostalCode,
-            $values->age,
-            $offering->id, $conData->id);
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
+        boolean_value_from($values->newsletter != null ? $values->newsletter : false),
+        boolean_value_from($values->volunteer != null ? $values->volunteer : false),
+        boolean_value_from($values->snailMail != null ? $values->snailMail : false),
+        $values->streetLine1,
+        $values->streetLine2,
+        $values->city,
+        $values->stateOrProvince,
+        $values->country,
+        $values->zipOrPostalCode,
+        $values->age,
+        $offering->id, $conData->id);
 
-        if ($stmt->execute()) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return true;
-        } else {
-            mysqli_close($db);
-            return false;
-        }
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        throw new DatabaseSqlException("Insert could not be processed: $query");
     }
 }
 

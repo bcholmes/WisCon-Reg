@@ -159,6 +159,7 @@ try {
                 if ($order && ($order->status === 'IN_PROGRESS')) {
                     mark_order_as_finalized($db, $order->id, $data->paymentMethod, $data->email);
                     if (process_stripe_status($ini, $db, $order, $data->paymentMethod)) {
+                        $order = find_order_by_order_uuid_with_db($db, $conData, $order_uuid);
                         compose_email($ini, $db, $conData, $data->email, $data->paymentMethod, $order, $locale);
 
                         update_programming_system($db, $conData, $order);

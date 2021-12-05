@@ -728,7 +728,7 @@ class OfferingList extends Component {
             .catch(error => {
                     this.setState({
                         ...this.state,
-                        messages: "Sorry. There was a probably talking to the server. Try again?"
+                        messages: [ "Sorry. There was a probably talking to the server. Try again?" ]
                     });
                 });
 
