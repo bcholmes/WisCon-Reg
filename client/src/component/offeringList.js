@@ -65,7 +65,9 @@ class OfferingList extends Component {
                 let price = o.suggestedPrice === undefined || o.suggestedPrice === null ? 'Any' : (o.suggestedPrice ===  0 ? 'Free' : ('$' + o.suggestedPrice.toFixed(0)));
                 let priceSuffix = this.isVariableAmount(o) ? (<small className="text-muted">+/-</small>) : undefined;
 
-                if (o.emphasis) {
+                if (o.remaining != null && o.remaining <= 0) {
+                    return undefined;
+                } else if (o.emphasis) {
                     return (
                         <div className="col" key={'offering-' + o.id}>
                             <div className="card mb-4 rounded-3 shadow-sm border-primary">
@@ -75,6 +77,7 @@ class OfferingList extends Component {
                             <div className="card-body">
                                 <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
+                                {this.supplyNotes(o)}
                                 {highlights}
                                 </ul>
                                 <Button size="lg" className="w-100" onClick={()  => this.showModal(o) }>Add to cart</Button>
@@ -92,6 +95,7 @@ class OfferingList extends Component {
                             <div className="card-body">
                                 <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
+                                {this.supplyNotes(o)}
                                 {highlights}
                                 </ul>
                                 <Button size="lg" className="w-100" onClick={()  => this.showModal(o) } variant="outline-primary">Add to cart</Button>
@@ -496,6 +500,14 @@ class OfferingList extends Component {
                     </Modal>
                 </div>
             );
+        }
+    }
+
+    supplyNotes(offering) {
+        if (offering.remaining && offering.remaining < 10) {
+            return (<li className="text-warning">Not many left</li>)
+        } else {
+            return undefined;
         }
     }
 

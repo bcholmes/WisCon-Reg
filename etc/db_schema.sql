@@ -331,3 +331,14 @@ create table reg_program_link (
 
 alter table reg_offering add column is_donation char(1) not null default 'N';
 alter table reg_offering add column short_name varchar(255);
+alter table reg_offering add column quantity_pool_id int;
+
+create table reg_quantity_pool (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `quantity` int(11) NOT NULL,
+  `notes` varchar(255),
+  PRIMARY KEY (`id`)
+);
+
+insert into reg_quantity_pool (quantity, notes) values (200, 'Dessert tickets');
+insert into reg_quantity_pool (quantity, notes) values (1000, 'In-person memberships');

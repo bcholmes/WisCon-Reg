@@ -19,20 +19,27 @@ require_once("config.php");
 require_once("db_common_functions.php");
 
 function delete_order_item($db, $order, $order_item_uuid) {
-    $query = <<<EOD
- DELETE from reg_order_item
-  WHERE item_uuid = ?
-    AND order_id = ?;
- EOD;
+    mysqli_begin_transaction($db);
+    try {
+        $query = <<<EOD
+    DELETE from reg_order_item
+    WHERE item_uuid = ?
+        AND order_id = ?;
+    EOD;
 
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "si", $order_item_uuid, $order->id);
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "si", $order_item_uuid, $order->id);
 
-    if ($stmt->execute()) {
-        mysqli_stmt_close($stmt);
-        return true;
-    } else {
-        return false;
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+        } else {
+            throw new DatabaseSqlException("Delete could not be processed: $query");
+        }
+
+        update_last_modified_date_on_order($db, $order->id);
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
     }
 }
 

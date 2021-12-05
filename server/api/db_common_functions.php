@@ -172,7 +172,8 @@ function mark_order_as_finalized($db, $order_id, $payment_method, $email_address
     SET payment_method = ?,
         confirmation_email = ?,
         status = 'CHECKED_OUT',
-        finalized_date = now()
+        finalized_date = now(),
+        last_modified_date = now()
   WHERE id = ?;
  EOD;
 
@@ -191,7 +192,8 @@ function mark_order_as_paid($db, $order_id) {
     $query = <<<EOD
  UPDATE reg_order
     SET payment_date = now(),
-        status = 'PAID'
+        status = 'PAID',
+        last_modified_date = now()
   WHERE id = ?;
  EOD;
 
@@ -210,7 +212,8 @@ function mark_order_as_paid($db, $order_id) {
 function mark_order_as_cancelled($db, $order_id) {
     $query = <<<EOD
  UPDATE reg_order
-    SET status = 'CANCELLED'
+    SET status = 'CANCELLED',
+    last_modified_date = now()
   WHERE id = ?;
  EOD;
 
@@ -229,7 +232,8 @@ function mark_order_as_cancelled($db, $order_id) {
 function mark_order_as_refunded($db, $order_id) {
     $query = <<<EOD
  UPDATE reg_order
-    SET status = 'REFUNDED'
+    SET status = 'REFUNDED',
+        last_modified_date = now()
   WHERE id = ?;
  EOD;
 
@@ -256,7 +260,9 @@ function boolean_value_from($value) {
 }
 
 function create_order_item_with_uuid($db, $conData, $orderId, $values, $offering, $item_uuid) {
-    $query = <<<EOD
+    mysqli_begin_transaction($db);
+    try {
+        $query = <<<EOD
  INSERT
         INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, 
         street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id)
@@ -266,26 +272,49 @@ function create_order_item_with_uuid($db, $conData, $orderId, $values, $offering
    and  o.con_id = ?;
  EOD;
 
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
+            boolean_value_from($values->newsletter != null ? $values->newsletter : false),
+            boolean_value_from($values->volunteer != null ? $values->volunteer : false),
+            boolean_value_from($values->snailMail != null ? $values->snailMail : false),
+            $values->streetLine1,
+            $values->streetLine2,
+            $values->city,
+            $values->stateOrProvince,
+            $values->country,
+            $values->zipOrPostalCode,
+            $values->age,
+            $offering->id, $conData->id);
+
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+        } else {
+            throw new DatabaseSqlException("Insert could not be processed: $query");
+        }
+
+        update_last_modified_date_on_order($db, $orderId);
+        mysqli_commit($db);
+        return true;
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        throw $e;
+    }
+}
+
+function update_last_modified_date_on_order($db, $orderId) {
+    $query = <<<EOD
+    UPDATE reg_order
+    SET last_modified_date = now()
+    where id = ?;
+EOD;
+
     $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
-        boolean_value_from($values->newsletter != null ? $values->newsletter : false),
-        boolean_value_from($values->volunteer != null ? $values->volunteer : false),
-        boolean_value_from($values->snailMail != null ? $values->snailMail : false),
-        $values->streetLine1,
-        $values->streetLine2,
-        $values->city,
-        $values->stateOrProvince,
-        $values->country,
-        $values->zipOrPostalCode,
-        $values->age,
-        $offering->id, $conData->id);
+    mysqli_stmt_bind_param($stmt, "i", $orderId);
 
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
-        return true;
     } else {
         throw new DatabaseSqlException("Insert could not be processed: $query");
     }
 }
-
 ?>

@@ -54,7 +54,8 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
 
         $query = <<<EOD
         UPDATE reg_order 
-        SET con_id = ?
+        SET con_id = ?,
+            last_modified_date = now()
     WHERE id = ?;
     EOD;
 
@@ -89,20 +90,29 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
 }
 
 function convert_to_donation($db, $donationType, $orderId) {
-    $query = <<<EOD
-        UPDATE reg_order_item 
-        SET offering_id = ? 
-    WHERE order_id = ? 
-      AND offering_id NOT IN (select id from reg_offering where is_donation = 'Y');
-    EOD;
+    mysqli_begin_transaction($db);
+    try {
+        $query = <<<EOD
+            UPDATE reg_order_item 
+            SET offering_id = ? 
+        WHERE order_id = ? 
+        AND offering_id NOT IN (select id from reg_offering where is_donation = 'Y');
+        EOD;
 
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "ii", $donationType, $orderId);
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "ii", $donationType, $orderId);
 
-    if ($stmt->execute()) {
-        mysqli_stmt_close($stmt);
-    } else {
-        throw new DatabaseSqlException("The Update could not be processed: $query");
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+        } else {
+            throw new DatabaseSqlException("The Update could not be processed: $query");
+        }
+
+        update_last_modified_date_on_order($db, $orderId);
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        throw $e;
     }
 }
 
@@ -125,8 +135,7 @@ function send_marked_as_paid_email($ini, $db, $conData, $order) {
         The System That Sends the Emails
     </p>
 EOD;
-    send_email($emailBody, 'Your ' . $conData->name . ' order has been processed', [$order->confirmation_email => $email_name],
-        [$ini['email']['reg_email'] => 'Registration']);
+    send_email($emailBody, 'Your ' . $conData->name . ' order has been processed', [$order->confirmation_email => $email_name]);
 }
 
 

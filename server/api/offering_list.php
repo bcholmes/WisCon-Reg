@@ -25,7 +25,7 @@ function find_offerings($conData, $db) {
  SELECT 
         o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
         o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required, 
-        o.age_required, o.is_donation
+        o.age_required, o.is_donation, o.quantity_pool_id
    FROM 
         reg_offering o 
   LEFT OUTER JOIN reg_offering_highlight h
@@ -41,13 +41,13 @@ function find_offerings($conData, $db) {
         o.sort_order, o.id, h.sort_order;
  EOD;
 
+    $items = array();
     $stmt = mysqli_prepare($db, $query);
     mysqli_stmt_bind_param($stmt, "i", $conData->id);
     mysqli_set_charset($db, "utf8");
     if (mysqli_stmt_execute($stmt)) {
         $result = mysqli_stmt_get_result($stmt);
 
-        $items = array();
         $item = null;
         $highlight_list = null;
         while ($row = mysqli_fetch_object($result)) {
@@ -70,6 +70,7 @@ function find_offerings($conData, $db) {
                     "addressRequired" => ("Y" == $row->address_required ? true : false),
                     "ageRequired" => ("Y" == $row->age_required ? true : false),
                     "isDonation" => ("Y" == $row->is_donation ? true : false),
+                    "quantityPoolId" => $row->quantity_pool_id,
                 );
             }
             if ($row->highlight_text) {
@@ -82,8 +83,44 @@ function find_offerings($conData, $db) {
             array_push($items, $item);
         }
         mysqli_stmt_close($stmt);
-        return $items;
+    } else {
+        throw new DatabaseSqlException("Could not execute query: $query");
     }
+
+    $query = <<<EOD
+    SELECT count(i.id) as current_count, p.quantity, p.id as pool_id
+    FROM reg_order_item i, reg_order ord, reg_offering of, reg_quantity_pool p 
+    WHERE i.offering_id = of.id 
+    AND i.order_id = ord.id
+    AND (ord.status in ('PAID', 'CHECKED_OUT') or (ord.status = 'IN_PROGRESS' and timestampdiff(SECOND, ord.last_modified_date, now()) < 600))
+    AND of.quantity_pool_id = p.id 
+    AND ord.con_id = ?
+    GROUP BY p.id, p.quantity;
+EOD;
+   
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "i", $conData->id);
+    mysqli_set_charset($db, "utf8");
+    $quantities = array();
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_object($result)) {
+            $quantities[$row->pool_id] = $row->quantity - $row->current_count;
+        }
+        mysqli_stmt_close($stmt);
+    } else {
+        throw new DatabaseSqlException("Could not execute query: $query");
+    }
+
+    foreach ($items as &$item) {
+        if ($item['quantityPoolId'] && array_key_exists($item['quantityPoolId'], $quantities)) {
+            $item['remaining'] = $quantities[$item['quantityPoolId']];
+        }
+    }
+    unset($item);
+
+    return $items;
 }
 
 $db = connect_to_db($ini);
