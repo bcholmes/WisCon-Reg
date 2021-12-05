@@ -91,7 +91,7 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-        $conData = find_current_con($ini);
+        $conData = find_current_con_with_db($db);
         $now = date("Y-m-d H:i:s");
 
         if ($now > $conData->con_end_date) {

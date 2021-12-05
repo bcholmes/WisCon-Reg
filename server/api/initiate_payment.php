@@ -21,30 +21,23 @@ require_once("config.php");
 require_once("db_common_functions.php");
 $ini = read_ini();
 
-function add_payment_intent_id_to_order($ini, $order, $payment_intent_id) {
-    $db = mysqli_connect($ini['mysql']['host'], $ini['mysql']['user'], $ini['mysql']['password'], $ini['mysql']['db_name']);
-    if (!$db) {
-        return false;
-    } else {
-        $query = <<<EOD
+function add_payment_intent_id_to_order($db, $order, $payment_intent_id) {
+    $query = <<<EOD
  UPDATE reg_order
  SET 
         payment_intent_id = ?
  WHERE  id = ?
  EOD;
 
-        mysqli_set_charset($db, "utf8");
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "si", $payment_intent_id, $order->id);
+    mysqli_set_charset($db, "utf8");
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "si", $payment_intent_id, $order->id);
 
-        if ($stmt->execute()) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($db);
-            return true;
-        } else {
-            mysqli_close($db);
-            return false;
-        }
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+        return true;
+    } else {
+        throw new DatabaseSqlException("Update failed: $query");
     }
 }
 
@@ -87,7 +80,7 @@ try {
                     ]);
                 }
 
-                if ($order->payment_intent_id || add_payment_intent_id_to_order($ini, $order, $payment_intent->id)) {
+                if ($order->payment_intent_id || add_payment_intent_id_to_order($db, $order, $payment_intent->id)) {
                     header('Content-type: application/json');
                     $json_string = json_encode([ 'key' => $payment_intent->client_secret ]);
                     echo $json_string;

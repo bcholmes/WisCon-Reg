@@ -135,10 +135,10 @@ function donation_tax_clause($db, $order) {
         $dateClause = "";
         if ($order->payment_date) {
             $date = convert_database_date_to_date($order->payment_date);
-            $dateClause = " which we received on " . date_format($date, 'M j H:i e');
+            $dateClause = " which we received on " . date_format($date, 'M j H:i T');
         } else {
             $date = convert_database_date_to_date($order->finalized_date);
-            $dateClause = " which was pledged on " . date_format($date, 'M j H:i e');
+            $dateClause = " which was pledged on " . date_format($date, 'M j H:i T');
         }
         $taxClause = <<<EOD
         <p>SF3, WisCon's parent not-for-profit, would like to thank you for your gift of $gift$dateClause. 

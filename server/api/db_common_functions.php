@@ -87,22 +87,6 @@ function find_next_con($db) {
     }
 }
 
-function find_current_con($db_ini) {
-    try {
-        $db = connect_to_db($db_ini);
-        $con = find_current_con_with_db($db);
-        if ($con) {
-            mysqli_close($db);
-            return $con;
-        } else {
-            mysqli_close($db);
-            return false;
-        }
-    } catch (Exception $e) {
-        return false;
-    }
-}
-
 function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     $query = <<<EOD
  SELECT 
