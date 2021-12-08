@@ -738,11 +738,19 @@ class OfferingList extends Component {
                 });
                 })
             .catch(error => {
+                if (error.response && error.response.status === 409) {
+                    this.setState({
+                        ...this.state,
+                        messages: [ "Sorry, I think we've just run out of that item." ]
+                    });
+                    fetchOfferings();
+                } else {
                     this.setState({
                         ...this.state,
                         messages: [ "Sorry. There was a probably talking to the server. Try again?" ]
                     });
-                });
+                }
+            });
 
         }
     }
