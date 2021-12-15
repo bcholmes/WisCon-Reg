@@ -9,6 +9,7 @@ import Waiver from '../component/waiver'
 import Cart from '../component/cart'
 import OfferingList from '../component/offeringList';
 import PageHeader from '../component/pageHeader';
+import PageMessage from '../component/pageMessage';
 import PropTypes from "prop-types";
 import Footer from '../component/footer';
 import { withRouter } from "react-router";
@@ -34,6 +35,7 @@ class Home extends Component {
                 <div className="row">
                     <section className="col-lg-9">
                         <Welcome key="welcome"/>
+                        <PageMessage />
                         <OfferingList key="offering"/>
                     </section>
                     <section className="col-lg-3">

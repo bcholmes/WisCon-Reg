@@ -4,8 +4,8 @@ import axios from 'axios';
 import Spinner from 'react-bootstrap/Spinner';
 import store from '../state/store'
 import { removeFromCart } from '../state/cartActions';
+import { addMessage } from '../state/pageMessageActions';
 import { formatAmount } from '../util/numberUtil';
-import { sdlc } from '../util/sdlcUtil';
 
 class Cart extends Component {
 
@@ -83,7 +83,7 @@ class Cart extends Component {
             loading: item.itemUUID
         });
 
-        axios.post(sdlc.serverUrl('/api/remove_item.php'), {
+        axios.post('/api/remove_item.php', {
             "orderId": store.getState().cart.orderId,
             "itemId": item.itemUUID
         })
@@ -91,6 +91,7 @@ class Cart extends Component {
                 store.dispatch(removeFromCart(item) );
             })
         .catch(error => {
+                store.dispatch(addMessage({severity: "danger", text: "There was a problem talking to the server.", category: "http" }));
                 this.setState({
                     ...this.state,
                     loading: null

@@ -14,7 +14,7 @@ import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
 import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
-import { logout } from '../state/authActions';
+import { logoutWithMessage } from '../state/authActions';
 import { sdlc } from '../util/sdlcUtil';
 import AdminOrderSummary from '../component/adminOrderSummary';
 
@@ -272,7 +272,7 @@ class RegistrationsPage extends Component {
                     message: message
                 })
                 if (error.response && error.response.status === 401) {
-                    store.dispatch(logout());
+                    this.forceLogout();
                 }
             });
     }
@@ -326,10 +326,14 @@ class RegistrationsPage extends Component {
                     message: message
                 })
                 if (error.response && error.response.status === 401) {
-                    store.dispatch(logout());
+                    this.forceLogout();
                 }
             });
         }
+    }
+
+    forceLogout() {
+        store.dispatch(logoutWithMessage({ severity: "warning", text: "Your session is no longer valid. Please log in again.", category: "auth"}));
     }
 
     handleOrderUpdate() {

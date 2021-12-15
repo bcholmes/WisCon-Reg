@@ -40,33 +40,36 @@ EOD;
         throw new DatabaseSqlException("Could not execute query: $query");
     }
 
-
-    $query = <<<EOD
-    SELECT count(i.id) as current_count, p.quantity, p.id as pool_id
-    FROM reg_order_item i, reg_order ord, reg_offering of, reg_quantity_pool p 
-    WHERE i.offering_id = of.id 
-    AND i.order_id = ord.id
-    AND (ord.status in ('PAID', 'CHECKED_OUT') or (ord.status = 'IN_PROGRESS' and timestampdiff(SECOND, ord.last_modified_date, now()) < 600))
-    AND of.quantity_pool_id = p.id 
-    AND ord.con_id = ?
-    AND of.quantity_pool_id = ?
-    GROUP BY p.id, p.quantity;
+    if ($pool_id) {
+        $query = <<<EOD
+        SELECT count(i.id) as current_count, p.quantity, p.id as pool_id
+        FROM reg_order_item i, reg_order ord, reg_offering of, reg_quantity_pool p 
+        WHERE i.offering_id = of.id 
+        AND i.order_id = ord.id
+        AND (ord.status in ('PAID', 'CHECKED_OUT') or (ord.status = 'IN_PROGRESS' and timestampdiff(SECOND, ord.last_modified_date, now()) < 600))
+        AND of.quantity_pool_id = p.id 
+        AND ord.con_id = ?
+        AND of.quantity_pool_id = ?
+        GROUP BY p.id, p.quantity;
 EOD;
 
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "ii", $conData->id, $pool_id);
-    mysqli_set_charset($db, "utf8");
-    $available = 0;
-    if (mysqli_stmt_execute($stmt)) {
-        $result = mysqli_stmt_get_result($stmt);
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "ii", $conData->id, $pool_id);
+        mysqli_set_charset($db, "utf8");
+        $available = 0;
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
 
-        while ($row = mysqli_fetch_object($result)) {
-            $available = $row->quantity - $row->current_count;
+            while ($row = mysqli_fetch_object($result)) {
+                $available = $row->quantity - $row->current_count;
+            }
+            mysqli_stmt_close($stmt);
+            return $available;
+        } else {
+            throw new DatabaseSqlException("Could not execute query: $query");
         }
-        mysqli_stmt_close($stmt);
-        return $available;
     } else {
-        throw new DatabaseSqlException("Could not execute query: $query");
+        return 999999;
     }
 }
 
