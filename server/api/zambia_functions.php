@@ -161,7 +161,7 @@ function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
     } else {
-        throw new DatabaseSqlException("The Insert could not be processed");
+        throw new DatabaseSqlException("The Insert could not be processed: $query");
     }
 
     $name = split_first_and_last_names($pubsname);
@@ -191,7 +191,23 @@ function create_new_programming_user($db, $badgeid, $pubsname, $email_address, $
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);
     } else {
-        throw new DatabaseSqlException("The Insert could not be processed");
+        throw new DatabaseSqlException("The Insert could not be processed: $query");
+    }
+
+    $query = <<<EOD
+    INSERT INTO `UserHasPermissionRole` 
+        (badgeid, permroleid)
+    SELECT ?, permroleid
+      FROM PermissionRoles
+     WHERE permrolename = 'Program Participant';
+EOD;
+
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "s", $badgeid);
+    if ($stmt->execute()) {
+        mysqli_stmt_close($stmt);
+    } else {
+        throw new DatabaseSqlException("The Insert could not be processed: $query");
     }
 }
 
