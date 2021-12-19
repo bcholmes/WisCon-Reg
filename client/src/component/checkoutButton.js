@@ -10,7 +10,9 @@ class CheckoutButton extends Component {
         this.state = {
             enabled: store.getState().cart.items.length > 0
         }
+    }
 
+    componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
             this.setState({
                 enabled: store.getState().cart.items.length > 0
@@ -19,7 +21,9 @@ class CheckoutButton extends Component {
     }
 
     componentWillUnmount() {
-        this.unsubscribe();
+        if (this.unsubscribe) {
+            this.unsubscribe();
+        }
     }
 
     render() {

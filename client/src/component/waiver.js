@@ -5,11 +5,12 @@ import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
-import Spinner from 'react-bootstrap/Spinner';
 
 import store from '../state/store';
 import { addStripeSecret, calculateTotal } from '../state/cartActions';
 import { sdlc } from '../util/sdlcUtil';
+
+import LoadingButton from './loadingButton';
 
 class Waiver extends Component {
 
@@ -23,14 +24,6 @@ class Waiver extends Component {
     }
     
     render() {
-        const spinner = this.state.loading ? (<Spinner
-            as="span"
-            animation="border"
-            size="sm"
-            role="status"
-            aria-hidden="true"
-        />) : undefined;
-
         const message = this.state.message ? (<Alert variant="danger">{this.state.message}</Alert>) : undefined;
 
         return (
@@ -60,10 +53,7 @@ class Waiver extends Component {
                     <Button variant="link" onClick={() => this.handleClose(false)}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={() => this.handleClose(true)} disabled={!this.state.canCheckout || this.state.loading}>
-                        {spinner}
-                        Checkout
-                    </Button>
+                    <LoadingButton onClick={() => this.handleClose(true)} loading={this.state.loading} enabled={this.state.canCheckout} text="Checkout" />
                 </Modal.Footer>
             </Modal>
         )
