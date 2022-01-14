@@ -82,11 +82,11 @@ SELECT distinct P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.e
 insert into PermissionRoles (permrolename, notes, display_order) values ('Bookkeeping', 'Read-only access to registration system', 38);
 
 create view reg_user_roles as 
-SELECT badgeid, PR.permrolename
+SELECT badgeid, PR.permrolename as role_name
    from
         PermissionRoles PR
         LEFT JOIN UserHasPermissionRole UHPR ON UHPR.permroleid = PR.permroleid
-        where PR.permrolename = 'Registration' or PR.permrolename = 'Bookkeeping'
+        where PR.permrolename = 'Registration' or PR.permrolename = 'Bookkeeping';
 
 insert into reg_offering 
 (sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
