@@ -27,6 +27,31 @@ function get_name($dbobject) {
     }
 }
 
+function get_permission_roles($db, $badgeid) {
+    $query = <<<EOD
+ SELECT 
+        role_name
+   FROM 
+        reg_user_roles 
+  WHERE 
+         badgeid = ?;
+ EOD;
+
+    $stmt = mysqli_prepare($db, $query);
+    mysqli_stmt_bind_param($stmt, "s", $badgeid);
+    if (mysqli_stmt_execute($stmt)) {
+        $result = mysqli_stmt_get_result($stmt);
+        $roles = array();
+        while ($dbobject = mysqli_fetch_object($result)) {
+            $roles[] = $dbobject->role_name;
+        }
+        mysqli_stmt_close($stmt);
+        return $roles;
+    } else {
+        throw new DatabaseSqlException("Query could not be executed: $query");
+    }
+}
+
 function resolve_login($db, $ini, $userid, $password) {
     $query = <<<EOD
  SELECT 
@@ -37,7 +62,6 @@ function resolve_login($db, $ini, $userid, $password) {
          email = ?;
  EOD;
 
-    mysqli_set_charset($db, "utf8");
     $stmt = mysqli_prepare($db, $query);
     mysqli_stmt_bind_param($stmt, "s", $userid);
     if (mysqli_stmt_execute($stmt)) {
@@ -45,9 +69,8 @@ function resolve_login($db, $ini, $userid, $password) {
         if (mysqli_num_rows($result) == 1) {
             $dbobject = mysqli_fetch_object($result);
             mysqli_stmt_close($stmt);
-            mysqli_close($db);
             if (password_verify($password, $dbobject->password)) {
-                return jwt_create_token($dbobject->badgeid, get_name($dbobject), $ini['jwt']['issuer'], $ini['jwt']['key']);
+                return jwt_create_token($dbobject->badgeid, get_name($dbobject), get_permission_roles($db, $dbobject->badgeid), $ini['jwt']['issuer'], $ini['jwt']['key']);
             } else {
                 return false;
             }

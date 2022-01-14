@@ -68,7 +68,7 @@ from reg_perennial_con_info;
 
 
 create view reg_users as 
-SELECT P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.email
+SELECT distinct P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.email
     FROM
                 Participants P
         JOIN CongoDump C ON P.badgeid = C.badgeid
@@ -76,9 +76,17 @@ SELECT P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.email
     (select badgeid from 
         PermissionRoles PR
         LEFT JOIN UserHasPermissionRole UHPR ON UHPR.permroleid = PR.permroleid
-        where PR.permrolename = 'Registration');
+        where PR.permrolename = 'Registration' or PR.permrolename = 'Bookkeeping');
 
 
+insert into PermissionRoles (permrolename, notes, display_order) values ('Bookkeeping', 'Read-only access to registration system', 38);
+
+create view reg_user_roles as 
+SELECT badgeid, PR.permrolename
+   from
+        PermissionRoles PR
+        LEFT JOIN UserHasPermissionRole UHPR ON UHPR.permroleid = PR.permroleid
+        where PR.permrolename = 'Registration' or PR.permrolename = 'Bookkeeping'
 
 insert into reg_offering 
 (sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)

@@ -142,7 +142,7 @@ EOD;
 $ini = read_ini();
 $db = connect_to_db($ini);
 try {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], 'Registration')) {
 
         $conData = find_current_con_with_db($db);
 

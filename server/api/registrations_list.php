@@ -156,7 +156,7 @@ try {
     $count = count_registrations($conData, $db, $term);
     $items = find_registrations($conData, $db, $term, $page, $PAGE_SIZE);
 
-    if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'])) {
         http_response_code(401);
     } else if ($items === false) {
         http_response_code(500);

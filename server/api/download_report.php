@@ -38,7 +38,7 @@ try {
         $formattedDate = date_format($date, 'Y-m-d-H.i.s');
         $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], true)) {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET' && !jwt_validate_token(jwt_from_header(), $ini['jwt']['key'])) {
             http_response_code(401);
         } else {
             $query = <<<EOD

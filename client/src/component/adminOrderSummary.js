@@ -13,6 +13,7 @@ import { withRouter } from "react-router";
 import SimpleAlert from './simpleAlert';
 
 import {formatAmount} from '../util/numberUtil';
+import { isAdmin } from '../state/authActions';
 
 class AdminOrderSummary extends Component {
 
@@ -66,37 +67,40 @@ class AdminOrderSummary extends Component {
                 </tr>)
             }) : undefined;
 
-            let updateForm = (this.state.updateMode) 
-                ? (<Form onSubmit={(e) => this.updateOrder(e)}>
-                    <Form.Group controlId="action" className="row">
-                        <div className="offset-md-3 col-md-6">
-                            <Form.Label>Update action:</Form.Label>
-                            <Form.Control as="select" onChange={(e) => this.setFormValue("action", e.target.value)} key="action">
-                                <option value="">Choose update action...</option>
-                                {this.allUpdateActions().map(e => { return (<option value={e.value} key={e.value}>{e.text}</option>); } )}
-                            </Form.Control>
+            let updateForm = undefined;
+            if (isAdmin()) {
+                updateForm = (this.state.updateMode) 
+                    ? (<Form onSubmit={(e) => this.updateOrder(e)}>
+                        <Form.Group controlId="action" className="row">
+                            <div className="offset-md-3 col-md-6">
+                                <Form.Label>Update action:</Form.Label>
+                                <Form.Control as="select" onChange={(e) => this.setFormValue("action", e.target.value)} key="action">
+                                    <option value="">Choose update action...</option>
+                                    {this.allUpdateActions().map(e => { return (<option value={e.value} key={e.value}>{e.text}</option>); } )}
+                                </Form.Control>
+                            </div>
+                        </Form.Group>
+                        {this.createDonationChoice()}
+
+                        <div className="text-right">
+                            <Button variant="link" onClick={() => this.updateMode(false)} >
+                                Cancel
+                            </Button>
+                            <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.isUpdateEnabled()}>
+                                Update
+                            </Button>
                         </div>
-                    </Form.Group>
-                    {this.createDonationChoice()}
-
-                    <div className="text-right">
-                        <Button variant="link" onClick={() => this.updateMode(false)} >
-                            Cancel
-                        </Button>
-                        <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.isUpdateEnabled()}>
-                            Update
-                        </Button>
-                    </div>
-                </Form>)
-                : (<div className="text-right">
-                <Button variant="outline-primary" onClick={() => this.resendEmail()} key="resend-button">
-                    Resend email
-                </Button>
-                <Button variant="outline-primary ml-3" onClick={() => this.updateMode(true)} key="update-button">
-                    Update
-                </Button>
-            </div>);
-
+                    </Form>)
+                    : (<div className="text-right">
+                    <Button variant="outline-primary" onClick={() => this.resendEmail()} key="resend-button">
+                        Resend email
+                    </Button>
+                    <Button variant="outline-primary ml-3" onClick={() => this.updateMode(true)} key="update-button">
+                        Update
+                    </Button>
+                </div>);
+            }
+            
             let paymentDate = this.state.order.paymentDate ? (<time dateTime={this.state.order.paymentDate}>{this.state.order.paymentDateSimple}</time>) : undefined;
             content = (
                 <section>

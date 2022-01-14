@@ -33,7 +33,7 @@ function jwt_from_header() {
 // opposed to a hacker in Russia). An authenticated user (i.e. someone
 // who has logged in) has a token that includes a participant scope and
 // the token's subject ("sub") references the user's badgeid.
-function jwt_validate_token($token, $key, $as_admin_scope = false) {
+function jwt_validate_token($token, $key, $role = null) {
     
     $jwt = new Emarref\Jwt\Jwt();
 
@@ -56,9 +56,9 @@ function jwt_validate_token($token, $key, $as_admin_scope = false) {
             $verifier->verify($deserialized);
         }
 
-        if ($as_admin_scope) {
+        if ($role) {
             $scope = $deserialized->getPayload()->findClaimByName("scope");
-            if ($scope === null || !in_array("admin", $scope->getValue())) {
+            if ($scope === null || !in_array($role, $scope->getValue())) {
                 return false;
             }
         }   
@@ -80,7 +80,7 @@ function jwt_extract_badgeid($token) {
 	return $subject != null ? $subject->getValue() : null;
 }
 
-function jwt_create_token($badgeid, $name, $issuer, $signingKey) {
+function jwt_create_token($badgeid, $name, $roles, $issuer, $signingKey) {
     $token = new Emarref\Jwt\Token();
 
     // Standard claims are supported
@@ -90,7 +90,7 @@ function jwt_create_token($badgeid, $name, $issuer, $signingKey) {
     $token->addClaim(new Claim\NotBefore(new DateTime('now')));
     $token->addClaim(new Claim\Subject($badgeid));
     $token->addClaim(new Claim\PublicClaim('name', $name));
-    $token->addClaim(new Claim\PublicClaim('scope', array( "admin" )));
+    $token->addClaim(new Claim\PublicClaim('scope', $roles));
 
     $jwt = new Emarref\Jwt\Jwt();
 
