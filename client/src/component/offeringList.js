@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {connect} from 'react-redux';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import Alert from 'react-bootstrap/Alert';
@@ -13,6 +14,7 @@ import { fetchOfferings } from '../state/offeringActions';
 import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
 import { sdlc } from '../util/sdlcUtil';
+import { isAdmin } from '../state/authActions';
 
 class OfferingList extends Component {
 
@@ -20,45 +22,30 @@ class OfferingList extends Component {
         super(props);
 
         this.state = {
-            showModal: false,
-            offerings: store.getState().offerings
+            showModal: false
         }
     }
 
     componentDidMount() {
-        if (this.state.offerings.loading) {
+        if (this.props.offerings.loading) {
             fetchOfferings();
-        }
-
-        this.unsubscribe = store.subscribe(() => {
-            let state = this.state;
-            this.setState({
-                ...state,
-                offerings: store.getState().offerings
-            });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribe) {
-            this.unsubscribe();
         }
     }
 
     render() {
-        if (this.state.offerings.loading) {
+        if (this.props.offerings.loading) {
             return (
                 <div className="text-center">
                     <Spinner animation="border" />
                 </div>
             );
-        } else if (this.state.offerings.regClosed) {
+        } else if (this.props.offerings.regClosed) {
             return (
                 <Alert variant="warning">Aw, drat. Registration for WisCon is closed at this time.</Alert>
             )
         } else {
 
-            let offeringList = this.state.offerings.items.map((o) => {
+            let offeringList = this.props.offerings.items.map((o) => {
                 let highlights = o.highlights.map((h, i) => {
                     return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
                 })
@@ -66,6 +53,8 @@ class OfferingList extends Component {
                 let priceSuffix = this.isVariableAmount(o) ? (<small className="text-muted">+/-</small>) : undefined;
 
                 if (o.remaining != null && o.remaining <= 0) {
+                    return undefined;
+                } else if (o.isRestricted && !this.props.isAdmin) {
                     return undefined;
                 } else if (o.emphasis) {
                     return (
@@ -764,4 +753,8 @@ class OfferingList extends Component {
     }
 }
 
-export default OfferingList;
+function mapStateToProps(state) {
+    return { offerings: state.offerings, isAdmin: isAdmin() };
+}
+
+export default connect(mapStateToProps)(OfferingList);

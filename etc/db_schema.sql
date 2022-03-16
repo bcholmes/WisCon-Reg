@@ -350,3 +350,48 @@ create table reg_quantity_pool (
 
 insert into reg_quantity_pool (quantity, notes) values (200, 'Dessert tickets');
 insert into reg_quantity_pool (quantity, notes) values (1000, 'In-person memberships');
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(99, 'Donate Membership to BIPOC Volunteer', 1, '2022-05-31 23:59:59', 65.00,
+'In response to feedback from our membership, WisCon/SF3 is working on a variety of antiracism initiatives. One of these involves supporting BIPOC volunteers with complimentary memberships, starting with pre-con volunteers. To support this initiative, you can make a $65 donation to cover the cost of one such membership. Funds that are not disbursed will go towards our overall efforts towards antiracism and affordability.', 
+'N', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Support BIPOC volunteers with a complimentary membership'
+from reg_offering;
+
+alter table reg_offering add column restricted_access char(1) not null default 'N';
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'BIPOC Volunteer Membership', 1, '2022-05-31 23:59:59', 0.00,
+'Create a membership for a BIPOC volunteer using donated funds', 
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
+from reg_offering;
+
+update reg_quantity_pool set quantity = 350 where notes = 'In-person memberships';
+
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(22, 'Upgrade Online to In-Person', 1, '2022-05-31 23:59:59', 25.00,
+'If you already have an Online Membership, you can upgrade to an In-Person membership by purchasing this item.', 
+'N', 'N', 'YES');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Upgrade an existing Online Membership'
+from reg_offering;
