@@ -379,7 +379,7 @@ select max(id),
 1, 'This is a secret item, covered with a cloak of invisibility'
 from reg_offering;
 
-update reg_quantity_pool set quantity = 350 where notes = 'In-person memberships';
+update reg_quantity_pool set quantity = 600 where notes = 'In-person memberships';
 
 
 
@@ -394,4 +394,17 @@ insert into reg_offering_highlight
 (offering_id, sort_order, highlight_text)
 select max(id),
 1, 'Upgrade an existing Online Membership'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'BIPOC Online Volunteer Membership', 1, '2022-05-31 23:59:59', 0.00,
+'Create a membership for a BIPOC volunteer using donated funds', 
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
 from reg_offering;
