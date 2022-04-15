@@ -18,6 +18,8 @@
 require_once("config.php");
 require_once("db_common_functions.php");
 require_once("format_functions.php");
+require_once("jwt_functions.php");
+require_once("authentication.php");
 
 function find_order_items($db, $orderId) {
     $query = <<<EOD
@@ -123,13 +125,12 @@ try {
     $locale = get_client_locale();
 
     $order_uuid = $_REQUEST['orderId'];
-    $key = $_REQUEST['key'];
+    $key = array_key_exists('key', $_REQUEST) ? $_REQUEST['key'] : null;
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $order = find_order_and_items_by_order_uuid($db, $conData, $order_uuid, $locale);
-        // TODO check key
-        if ($order && validate_key($order, $key)) {
+        if ($order && (($key && validate_key($order, $key)) || Authentication::isRegistration($ini)) ) {
             $json_string = json_encode($order);
             echo $json_string;
         } else if ($order) {

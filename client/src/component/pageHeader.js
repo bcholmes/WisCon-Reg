@@ -58,7 +58,7 @@ class PageHeader extends Component {
 
         return [
             <header className="pb-3 mb-2" key="page-header-header">
-                <img className="img-fluid" src="./images/wiscon_header.jpg" style={{width: "100%" }} alt="The WisCon Conference"/>
+                <img className="img-fluid" src="/images/wiscon_header.jpg" style={{width: "100%" }} alt="The WisCon Conference"/>
                 <Navbar bg="dark" expand="lg" className="navbar-dark navbar-expand-md justify-content-between">
                     <Nav className="navbar-expand-md navbar-dark bg-dark ">
                         <Nav.Link onClick={() => this.goToHome()}>Home</Nav.Link>

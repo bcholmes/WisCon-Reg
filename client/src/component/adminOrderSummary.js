@@ -25,7 +25,10 @@ class AdminOrderSummary extends Component {
             updateMode: false,
             values: {}
         };
-        this.fetchOrder(this.props.orderId, this.props.orderKey);
+    }
+
+    componentDidMount() {
+        this.fetchOrder(this.props.orderId);
     }
 
     render() {
@@ -58,14 +61,7 @@ class AdminOrderSummary extends Component {
                 currency = item.currency;
             }
 
-            let rows = this.state.order.items ? this.state.order.items.map((item, i) => {
-                return (<tr key={i}>
-                    <td>{item.title}</td>
-                    <td>{item.for}</td>
-                    <td>{item.emailAddress}</td>
-                    <td className="text-right"><small className="text-muted">{item.currency}</small> {formatAmount(item.amount, item.currency)}</td>
-                </tr>)
-            }) : undefined;
+            let rows = this.state.order.items ? this.state.order.items.map((item, i) => this.renderOrderItemRow(item, i)) : undefined;
 
             let updateForm = undefined;
             if (isAdmin()) {
@@ -92,6 +88,9 @@ class AdminOrderSummary extends Component {
                         </div>
                     </Form>)
                     : (<div className="text-right">
+                    <Button variant="link" onClick={() => this.backToRegistrationsList()} key="back-button">
+                        Back
+                    </Button>
                     <Button variant="outline-primary" onClick={() => this.resendEmail()} key="resend-button">
                         Resend email
                     </Button>
@@ -123,19 +122,13 @@ class AdminOrderSummary extends Component {
                     </table>
 
                     <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>For</th>
-                                <th>Email</th>
-                                <th className="text-right">Amount</th>
-                            </tr>
-                        </thead>
+                        {this.renderOrderItemTableHeader()}
                         <tbody>
                             {rows}
                         </tbody>
                         <tfoot>
                             <tr>
+                                {this.isLineByLineUpdateMode() ? (<td>&nbsp;</td>) : undefined}
                                 <td colSpan="3"><b>Total</b></td>
                                 <td className="text-right"><small className="text-muted">{currency}</small> <b>{formatAmount(total, currency)}</b></td>
                             </tr>
@@ -151,6 +144,42 @@ class AdminOrderSummary extends Component {
         }
 
         return content;
+    }
+
+    isLineByLineUpdateMode() {
+        return this.getFormValue('action') === 'LINE_BY_LINE';
+    }
+
+    renderOrderItemRow(item, i) {
+        let option = this.isLineByLineUpdateMode()
+            ? (<td>
+                    <Form.Group controlId="action" className="mb-0">
+                        <Form.Label className="sr-only">Update:</Form.Label>
+                        <Form.Control as="select" onChange={(e) => this.setFormValue("item-" + i, e.target.value)} key={"item-select-" + i}>
+                            <option value="">No change</option>
+                        </Form.Control>
+                    </Form.Group>
+                </td>) 
+            : null;
+        return (<tr key={i}>
+            {option}
+            <td>{item.title}</td>
+            <td>{item.for}</td>
+            <td>{item.emailAddress}</td>
+            <td className="text-right"><small className="text-muted">{item.currency}</small> {formatAmount(item.amount, item.currency)}</td>
+        </tr>);
+    }
+
+    renderOrderItemTableHeader() {
+        return (<thead>
+            <tr>
+                {this.isLineByLineUpdateMode() ? (<th>Action</th>) : undefined}
+                <th>Item</th>
+                <th>For</th>
+                <th>Email</th>
+                <th className="text-right">Amount</th>
+            </tr>
+        </thead>);
     }
 
     createDonationChoice() {
@@ -205,14 +234,24 @@ class AdminOrderSummary extends Component {
         })
     }
 
+    backToRegistrationsList() {
+        const { history } = this.props;
+        history.goBack();
+    }
+
+    getFormValue(formName) {
+        let value = this.state.values;
+        return value[formName] ? value[formName] : "";
+    }
+
     setFormValue(formName, formValue) {
         let value = this.state.values;
         let newValue = { ...value };
         newValue[formName] = formValue;
-        this.setState({
-            ...this.state,
+        this.setState((state) => ({
+            ...state,
             values: newValue
-        });
+        }));
     }
 
     isUpdateEnabled() {
@@ -233,10 +272,12 @@ class AdminOrderSummary extends Component {
                 result.push({ "value": "REFUND", "text": "Refund credit card"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
+                result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
             } else {
                 result.push({ "value": "REFUND", "text": "Refund (manual return)"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
+                result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
             }
             return result;
         } else {
@@ -254,9 +295,7 @@ class AdminOrderSummary extends Component {
             }
         })
         .then(res => {
-            if (this.props.onUpdate) {
-                this.props.onUpdate();
-            }
+            this.backToRegistrationsList();
         })
         .catch(error => {
             let message = { severity: "danger", text: "There was an error trying to update the specified order." }
@@ -267,15 +306,20 @@ class AdminOrderSummary extends Component {
         });
     }
 
-    fetchOrder(orderId, key) {
-        axios.get('/api/review_order.php?orderId=' + orderId + '&key=' + key)
+    fetchOrder(orderId) {
+        axios.get('/api/review_order.php?orderId=' + orderId, {
+                headers: {
+                    "Authorization": "Bearer " + store.getState().auth.jwt
+                }
+            })
             .then(res => {
-                this.setState({
+                this.setState((state) => ({
+                    ...state,
                     loading: false,
                     message: undefined, 
                     order: res.data,
                     updateMode: false
-                })
+                }))
             })
             .catch(error => {
                 let message = { severity: "danger", text: "There was an error trying to get the specified order." }

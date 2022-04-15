@@ -6,7 +6,6 @@ import Alert from 'react-bootstrap/Alert';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
 import Spinner from 'react-bootstrap/Spinner';
 import download from 'downloadjs';
 
@@ -15,8 +14,6 @@ import PageHeader from '../component/pageHeader';
 import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
 import { logoutWithMessage } from '../state/authActions';
-import { sdlc } from '../util/sdlcUtil';
-import AdminOrderSummary from '../component/adminOrderSummary';
 
 class RegistrationsPage extends Component {
 
@@ -137,15 +134,6 @@ class RegistrationsPage extends Component {
                     </tbody>
                     {linkFooter}
                 </table>
-
-                <Modal show={this.state.showModal}  onHide={() => this.handleClose()} size="xl">
-                    <Modal.Header closeButton>
-                    <Modal.Title>Order Review</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <AdminOrderSummary orderId={this.state.orderId} orderKey={this.state.orderKey} onUpdate={() => this.handleOrderUpdate()}/>
-                    </Modal.Body>
-                </Modal>
                 <Footer />
             </Container>
         );
@@ -185,22 +173,8 @@ class RegistrationsPage extends Component {
     }
 
     openOrder(orderItem) {
-        console.log("open order");
-        this.setState({
-            ...this.state,
-            showModal: true,
-            orderId: orderItem.orderUuid,
-            orderKey: orderItem.key
-        });
-    }
-
-    handleClose() {
-        this.setState({
-            ...this.state,
-            showModal: false,
-            orderId: undefined,
-            orderKey: undefined
-        })
+        const { history } = this.props;
+        history.push('/admin/review/' + orderItem.orderUuid);
     }
 
     getTerm() {
@@ -233,7 +207,7 @@ class RegistrationsPage extends Component {
 
     async downloadReport() {
 
-        axios.get(sdlc.serverUrl('/api/download_report.php'), {
+        axios.get('/api/download_report.php', {
                 headers: {
                     "Authorization": "Bearer " + store.getState().auth.jwt
                 }
