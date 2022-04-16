@@ -8,11 +8,13 @@ class Order {
     public $id;
     public $status;
     public $paymentMethod;
+    public $paymentIntentId;
 
     function __construct($orderObject) {
         $this->id = $orderObject->id;
         $this->status = $orderObject->status;
         $this->paymentMethod = $orderObject->payment_method;
+        $this->paymentIntentId = $orderObject->payment_intent_id;
     }
 
     public function isCardPaymentMethod() {
@@ -53,6 +55,32 @@ EOD;
             mysqli_stmt_close($stmt);
             $fromOrder->updateLastModifiedDate($db);
             return $this->updateLastModifiedDate($db);
+        } else {
+            throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
+    public function sumAmounts($db, $itemIds) {
+        $idList = implode_and_escape_ids($db, $itemIds);
+
+        $query = <<<EOD
+        SELECT sum(amount) as amount
+         FROM reg_order_item
+        WHERE order_id = ?
+          AND id in ($idList);
+EOD;
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $this->id);
+
+        if ($stmt->execute()) {
+            $result = null;
+            $resultSet = mysqli_stmt_get_result($stmt);
+            if (mysqli_num_rows($resultSet) == 1) {
+                $record = mysqli_fetch_object($resultSet);
+                $result = $record->amount;
+            }
+            mysqli_stmt_close($stmt);
+            return $result;
         } else {
             throw new DatabaseException("Update could not be processed: $query");
         }

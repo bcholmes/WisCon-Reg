@@ -13,7 +13,9 @@ class LoadingButton extends Component {
             role="status"
             aria-hidden="true"
         />) : undefined;
-        return (<Button variant="primary" onClick={() => this.props.onClick()} disabled={!this.props.enabled || this.props.loading}>{spinner} {this.props.text}</Button>);
+        return (<Button variant="primary" onClick={() => this.props.onClick()} 
+            className={this.props.className}
+            disabled={!this.props.enabled || this.props.loading}>{spinner} {this.props.text}</Button>);
     }
 }
 

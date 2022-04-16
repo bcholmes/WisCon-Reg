@@ -15,7 +15,7 @@ class StripeHelper {
             $this->ini['stripe']['secret_key']
         );
     
-        $re = \Stripe\Refund::create(['payment_intent' =>  $order->payment_intent_id ]);
+        $re = \Stripe\Refund::create(['payment_intent' =>  $order->paymentIntentId ]);
         if ($re->status === 'succeeded') {
             return true;
         } else {
@@ -29,7 +29,7 @@ class StripeHelper {
             $this->ini['stripe']['secret_key']
         );
     
-        $re = \Stripe\Refund::create(['payment_intent' =>  $order->payment_intent_id, 'amount' => $amountInCents ]);
+        $re = \Stripe\Refund::create(['payment_intent' =>  $order->paymentIntentId, 'amount' => $amountInCents ]);
         if ($re->status === 'succeeded') {
             return true;
         } else {

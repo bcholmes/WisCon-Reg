@@ -11,6 +11,7 @@ import store from '../state/store'
 import { withRouter } from "react-router";
 
 import SimpleAlert from './simpleAlert';
+import LoadingButton from './loadingButton';
 
 import {formatAmount} from '../util/numberUtil';
 import { isAdmin } from '../state/authActions';
@@ -82,9 +83,9 @@ class AdminOrderSummary extends Component {
                             <Button variant="link" onClick={() => this.updateMode(false)} >
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="primary" className="ml-3" key="update-button" disabled={!this.isUpdateEnabled()}>
-                                Update
-                            </Button>
+                            <LoadingButton variant="primary" className="ml-3" key="update-button" 
+                                enabled={this.isUpdateEnabled()} loading={this.state.updating} text="Update" 
+                                onClick={() => this.updateOrder()} />
                         </div>
                     </Form>)
                     : (<div className="text-right">
@@ -352,8 +353,14 @@ class AdminOrderSummary extends Component {
 
 
     updateOrder(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        this.setState((state) => ({
+            ...state,
+            updating: true,
+        }))
 
         let data = { action: this.getFormValue("action"), orderId: this.state.order.orderUuid };
         if (this.isLineByLineUpdateMode()) {
@@ -366,12 +373,17 @@ class AdminOrderSummary extends Component {
             }
         })
         .then(res => {
+            this.setState((state) => ({
+                ...state,
+                updating: false,
+            }))    
             this.backToRegistrationsList();
         })
         .catch(error => {
             let message = { severity: "danger", text: "There was an error trying to update the specified order." }
             this.setState({
                 loading: false,
+                updating: false,
                 message: message
             })
         });

@@ -25,6 +25,7 @@ require_once("zambia_functions.php");
 require_once("authentication.php");
 require_once("order.php");
 require_once("planz.php");
+require_once("stripe_helper.php");
 
 function process_stripe_refund($ini, $order) {
     \Stripe\Stripe::setApiKey(
@@ -176,15 +177,17 @@ function process_line_by_line_items($ini, $db, $items, $order) {
 
             if ($o->isCardPaymentMethod()) {
                 // figure out refund amount
+                $amount = $o->sumAmounts($db, $itemIds) * 100;
 
                 // process partial refund
+                $stripeHelper = new StripeHelper($ini);
+                $stripeHelper->refundPartialAmount($o, $amount);
             }
         }
 
         // handle the deferred items
         $subList = filter_items_by_action($items, 'DEFER');
         if (count($subList) > 0) {
-            error_log(">>>>> DEFER <<<<<<" . count($subList));
             $nextCon = find_next_con($db);
             $newOrder = $o->createDuplicateOrderForNextYear($db, $nextCon);
             $itemIds = select_only_ids($subList);
