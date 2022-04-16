@@ -25,7 +25,7 @@ function find_offerings($conData, $db) {
  SELECT 
         o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
         o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required, 
-        o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access
+        o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id
    FROM 
         reg_offering o 
   LEFT OUTER JOIN reg_offering_highlight h
@@ -72,6 +72,7 @@ function find_offerings($conData, $db) {
                     "isDonation" => ("Y" == $row->is_donation ? true : false),
                     "isRestricted" => ("Y" == $row->restricted_access ? true : false),
                     "quantityPoolId" => $row->quantity_pool_id,
+                    "relatedOfferingId" => $row->related_offering_id,
                 );
             }
             if ($row->highlight_text) {

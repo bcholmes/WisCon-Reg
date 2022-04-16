@@ -18,6 +18,17 @@
 class DatabaseException extends Exception {};
 class DatabaseSqlException extends DatabaseException {};
 
+function implode_and_escape_ids($db, $ids) {
+    $idList = "";
+    foreach ($ids as $i) {
+        if (strlen($idList) > 0) {
+            $idList .= " ,";
+        }
+        $idList .= $db->escape_string($i);
+    }
+    return $idList;
+}
+
 function connect_to_db($db_ini) {
     $db = mysqli_connect($db_ini['mysql']['host'], $db_ini['mysql']['user'], $db_ini['mysql']['password'], $db_ini['mysql']['db_name']);
     if (!$db) {

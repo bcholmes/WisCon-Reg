@@ -38,7 +38,8 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
 
     $query = <<<EOD
     SELECT 
-            o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title
+            o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name, 
+            i.email_address, i.amount, off.title, i.status as item_status
     FROM 
             reg_order o
     LEFT OUTER JOIN reg_order_item i
@@ -50,7 +51,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
     WHERE o.con_id  = ?
         AND o.status != 'IN_PROGRESS'
         $filterQuery
-    ORDER BY o.finalized_date, o.id, i.id
+    ORDER BY o.id, i.id
     LIMIT $start, $pageSize
     EOD;
 
@@ -72,6 +73,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
                 "amount" => $row->amount,
                 "for" => $row->for_name,
                 "email_address" => $row->email_address,
+                "item_status" => $row->item_status,
                 "payment_method" => format_payment_type_for_display($row->payment_method, $locale)
             );
             if ($row->finalized_date) {

@@ -408,3 +408,10 @@ insert into reg_offering_highlight
 select max(id),
 1, 'This is a secret item, covered with a cloak of invisibility'
 from reg_offering;
+
+alter table reg_offering add related_offering_id int references reg_offering(`id`);
+
+alter table reg_order_item add orig_offering_id int references reg_offering(`id`);
+alter table reg_order_item add `status` varchar(32);
+
+alter table reg_order add orig_order_id int references reg_order(`id`) ON DELETE SET NULL;

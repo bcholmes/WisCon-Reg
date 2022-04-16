@@ -22,6 +22,9 @@ require_once("email_composer.php");
 require_once("format_functions.php");
 require_once("jwt_functions.php");
 require_once("zambia_functions.php");
+require_once("authentication.php");
+require_once("order.php");
+require_once("planz.php");
 
 function process_stripe_refund($ini, $order) {
     \Stripe\Stripe::setApiKey(
@@ -55,7 +58,7 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
         $query = <<<EOD
         UPDATE reg_order 
         SET con_id = ?,
-            last_modified_date = now()
+            last_modified_date = CURRENT_TIMESTAMP()
     WHERE id = ?;
     EOD;
 
@@ -138,11 +141,77 @@ EOD;
     send_email($emailBody, 'Your ' . $conData->name . ' order has been processed', [$order->confirmation_email => $email_name]);
 }
 
+function filter_items_by_action($items, $action) {
+    $result = array();
+    foreach ($items as $item) {
+        if ($item['action'] === $action) {
+            $result[] = $item;
+        }
+    }
+    return $result;
+}
+
+function select_only_ids($items) {
+    $result = [];
+    foreach ($items as $i) {
+        $result[] = $i['id'];
+    }
+    return $result;
+}
+
+function process_line_by_line_items($ini, $db, $items, $order) {
+    mysqli_begin_transaction($db);
+    try {
+        // TODO: validate order items...? 
+
+
+        $o = new Order($order);
+
+        // handle the refunded items
+        $subList = filter_items_by_action($items, 'REFUND');
+        if (count($subList) > 0) {
+            $itemIds = select_only_ids($subList);
+            $o->updateItemStatus($db, $itemIds, 'REFUNDED');
+            PlanZ::removeMemberships($db, $o->id, $itemIds);
+
+            if ($o->isCardPaymentMethod()) {
+                // figure out refund amount
+
+                // process partial refund
+            }
+        }
+
+        // handle the deferred items
+        $subList = filter_items_by_action($items, 'DEFER');
+        if (count($subList) > 0) {
+            error_log(">>>>> DEFER <<<<<<" . count($subList));
+            $nextCon = find_next_con($db);
+            $newOrder = $o->createDuplicateOrderForNextYear($db, $nextCon);
+            $itemIds = select_only_ids($subList);
+            $newOrder->moveItemsToOrder($db, $itemIds, $o);
+            PlanZ::deferMembershipsToCon($db, $o->id, $nextCon, $itemIds);
+        }
+
+        // handle the cancelled items
+        $subList = filter_items_by_action($items, 'CANCEL');
+        if (count($subList) > 0) {
+            $itemIds = select_only_ids($subList);
+            $o->updateItemStatus($db, $itemIds, 'CANCELLED');
+            PlanZ::removeMemberships($db, $o->id, $itemIds);
+        }
+
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        throw $e;
+    }
+}
+
 
 $ini = read_ini();
 $db = connect_to_db($ini);
 try {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && jwt_validate_token(jwt_from_header(), $ini['jwt']['key'], 'Registration')) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && Authentication::isRegistration($ini)) {
 
         $conData = find_current_con_with_db($db);
 
@@ -172,6 +241,9 @@ try {
                 } else if ($data['action'] === 'DEFER') {
                     $nextCon = find_next_con($db);
                     defer_order_to_later($db, $conData, $nextCon, $order->id);
+                    http_response_code(201);
+                } else if ($data['action'] === 'LINE_BY_LINE' && array_key_exists('items', $data)) {
+                    process_line_by_line_items($ini, $db, $data['items'], $order);
                     http_response_code(201);
                 } else {
                     http_response_code(400);

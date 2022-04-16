@@ -44,7 +44,7 @@ try {
             $query = <<<EOD
         SELECT 
                 o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title,
-                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required
+                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.item_status
         FROM 
                 reg_order o
         LEFT OUTER JOIN reg_order_item i
@@ -70,12 +70,12 @@ try {
                 $result = mysqli_stmt_get_result($stmt);
                 while ($row = mysqli_fetch_object($result)) {
                     $paid = 'No';
-                    if ($row->status === 'PAID') {
-                        $paid = 'Yes';
-                    } else if ($row->status === 'CANCELLED') {
+                    if ($row->status === 'CANCELLED' || $row->item_status === 'CANCELLED') {
                         $paid = 'Cancelled';
-                    } else if ($row->status === 'REFUNDED') {
+                    } else if ($row->status === 'REFUNDED' || $row->item_status === 'REFUNDED') {
                         $paid = 'Refunded';
+                    } else if ($row->status === 'PAID') {
+                        $paid = 'Yes';
                     }
 
                     echo "\"" . $row->id . "\",\"" . $row->confirmation_email . "\",\"" . $row->title . "\",\"" . $row->finalized_date . "\"," . 

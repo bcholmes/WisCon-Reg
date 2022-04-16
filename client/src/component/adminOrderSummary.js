@@ -70,7 +70,7 @@ class AdminOrderSummary extends Component {
                         <Form.Group controlId="action" className="row">
                             <div className="offset-md-3 col-md-6">
                                 <Form.Label>Update action:</Form.Label>
-                                <Form.Control as="select" onChange={(e) => this.setFormValue("action", e.target.value)} key="action">
+                                <Form.Control as="select" onChange={(e) => this.setFormValue("action", e.target.value)} value={this.getFormValue('action')} key="action">
                                     <option value="">Choose update action...</option>
                                     {this.allUpdateActions().map(e => { return (<option value={e.value} key={e.value}>{e.text}</option>); } )}
                                 </Form.Control>
@@ -147,21 +147,25 @@ class AdminOrderSummary extends Component {
     }
 
     isLineByLineUpdateMode() {
-        return this.getFormValue('action') === 'LINE_BY_LINE';
+        return this.state.updateMode && this.getFormValue('action') === 'LINE_BY_LINE';
     }
 
     renderOrderItemRow(item, i) {
-        let option = this.isLineByLineUpdateMode()
-            ? (<td>
+        let option = null;
+        if (this.isLineByLineUpdateMode() && item.status == null) {
+            option = (<td>
                     <Form.Group controlId="action" className="mb-0">
                         <Form.Label className="sr-only">Update:</Form.Label>
-                        <Form.Control as="select" onChange={(e) => this.setFormValue("item-" + i, e.target.value)} key={"item-select-" + i}>
+                        <Form.Control as="select" onChange={(e) => this.setFormItemValue(item.id, "action", e.target.value)} key={"item-select-" + i}>
                             <option value="">No change</option>
+                            {this.allLineByLineOptions(item).map(e => { return (<option value={e.value} key={e.value}>{e.text}</option>); }) }
                         </Form.Control>
                     </Form.Group>
-                </td>) 
-            : null;
-        return (<tr key={i}>
+                </td>);
+        } else if (this.isLineByLineUpdateMode()) {
+            option = (<td>&nbsp;</td>);
+        }
+        return (<tr key={i} className={item.status ? "inactive-order" : ""}>
             {option}
             <td>{item.title}</td>
             <td>{item.for}</td>
@@ -254,6 +258,30 @@ class AdminOrderSummary extends Component {
         }));
     }
 
+    setFormItemValue(itemId, key, value) {
+        itemId = "" + itemId;
+        let items = this.state.values.items ? this.state.values.items : {};
+        let newItems = items[itemId] ? { ...items[itemId] } : {};
+        if (key === "action" && value === "") {
+            newItems = {};
+        } else {
+            newItems[key] = value;
+        }
+        this.setState((state) => {
+            let items = state.values.items ? { ...state.values.items } : {};
+            items[itemId] = newItems;
+            console.log(items);
+            return {
+                ...state,
+                values: {
+                    ...state.values,
+                    items: items
+                }
+            };
+        });
+    }
+
+
     isUpdateEnabled() {
         if (this.state.values['action'] === 'CONVERT_TO_DONATION' && !this.state.values['donationType']) {
             return false;
@@ -262,22 +290,45 @@ class AdminOrderSummary extends Component {
         }
     }
 
+    allLineByLineOptions(item) {
+        let result = [];
+        if (this.state.order) {
+            if (this.state.order.status !== 'PAID') {
+                result.push({ "value": "CANCEL", "text": "Cancel item"});
+            } else if (this.state.order.paymentMethodKey === 'CARD') {
+                result.push({ "value": "REFUND", "text": "Refund item"});
+                result.push({ "value": "DEFER", "text": "Defer to next year"});
+            } else {
+                result.push({ "value": "REFUND", "text": "Refund item (manual return)"});
+                result.push({ "value": "DEFER", "text": "Defer to next year"});
+            }
+        }
+        return result;
+    }
+
     allUpdateActions() {
         if (this.state.order) {
             let result = [];
             if (this.state.order.status !== 'PAID') {
                 result.push({ "value": "MARK_AS_PAID", "text": "Mark as paid"});
                 result.push({ "value": "CANCEL", "text": "Cancel order"});
+                if (this.state.order.items.length > 1) {
+                    result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                }
             } else if (this.state.order.paymentMethodKey === 'CARD') {
                 result.push({ "value": "REFUND", "text": "Refund credit card"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
-                result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                if (this.state.order.items.length > 1) {
+                    result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                }
             } else {
                 result.push({ "value": "REFUND", "text": "Refund (manual return)"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
-                result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                if (this.state.order.items.length > 1) {
+                    result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                }
             }
             return result;
         } else {
@@ -285,11 +336,31 @@ class AdminOrderSummary extends Component {
         }
     }
 
+    formatItemsForRest() {
+        let result = [];
+        if (this.state.values.items) {
+            let keys = Object.keys(this.state.values.items);
+            keys.forEach(k => {
+                let item = { ...this.state.values.items[k] };
+                item['id'] = k;
+
+                result.push(item);
+            });
+        }
+        return result;
+    }
+
+
     updateOrder(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        axios.post('/api/update_order.php', { ...this.state.values, orderId: this.state.order.orderUuid }, {
+        let data = { action: this.getFormValue("action"), orderId: this.state.order.orderUuid };
+        if (this.isLineByLineUpdateMode()) {
+            data['items'] = this.formatItemsForRest();
+        }
+
+        axios.post('/api/update_order.php', data, {
             headers: {
                 "Authorization": "Bearer " + store.getState().auth.jwt
             }

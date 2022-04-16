@@ -24,7 +24,7 @@ require_once("authentication.php");
 function find_order_items($db, $orderId) {
     $query = <<<EOD
     SELECT 
-           i.for_name, i.email_address, i.amount, o.currency, o.title
+           i.id, i.for_name, i.email_address, i.amount, o.currency, o.title, i.status, o.related_offering_id
       FROM 
            reg_order_item i, reg_offering o
      WHERE 
@@ -40,11 +40,14 @@ function find_order_items($db, $orderId) {
         $items = array();
         while($row = mysqli_fetch_object($result)) {
             $item = array(
+                "id" => $row->id,
                 "for" => $row->for_name,
                 "emailAddress" => $row->email_address,
                 "currency" => $row->currency,
                 "amount" => $row->amount,
-                "title" => $row->title
+                "title" => $row->title,
+                "status" => $row->status,
+                "relatedOfferingId" => $row->related_offering_id,
             );
             array_push($items, $item);
         }

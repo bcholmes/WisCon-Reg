@@ -140,7 +140,7 @@ class RegistrationsPage extends Component {
     }
 
     isInactive(item) {
-        return item.status !== 'CHECKED_OUT' && item.status !== 'PAID';
+        return (item.status !== 'CHECKED_OUT' && item.status !== 'PAID') || item.item_status != null;
     }
 
     renderLinks() {
@@ -164,7 +164,7 @@ class RegistrationsPage extends Component {
                     ? (((this.state.pagination.page + 1).toString()) === link['name'] ? "active" : "") 
                     : "";
                 let pageItemClass = "page-item " + active;
-                return (<li className={pageItemClass}><a className="page-link" href="#" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
+                return (<li className={pageItemClass} key={'link-' + i}><a className="page-link" href="#" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
             });
             return (<ul className="pagination">{items}</ul>);
         } else {

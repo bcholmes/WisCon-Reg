@@ -468,8 +468,9 @@ class OfferingList extends Component {
                                     <Form.Label className="sr-only">Name</Form.Label>
                                     <Form.Control className={this.getErrorClass('for')} type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
                                     <Form.Text className="text-muted">
-                                        Please provide the full name of the person associated with this membership/item. 
-                                        This name will appear on your badge, and does not need to be a wallet name.
+                                    Please provide the full name of the person associated with this membership/item. This does not need to 
+                                    be a wallet name. By default this name will appear on your badge, but you can change your badge name 
+                                    by logging in at program.wiscon.net.
                                     </Form.Text>
 
                                 </Form.Group>
