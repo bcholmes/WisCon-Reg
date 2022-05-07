@@ -27,23 +27,26 @@ require_once("order.php");
 require_once("planz.php");
 require_once("stripe_helper.php");
 
-function process_stripe_refund($ini, $order) {
-    \Stripe\Stripe::setApiKey(
-        $ini['stripe']['secret_key']
-    );
+/**
+ * There are two reasons why we might not want to refund everything:
+ * 
+ * 1. We might have already done a partial refund. The refunded items have a non-null status.
+ * 2. Some items might have been deferred to next year: those items should have a different
+ *    
+ */
+function process_stripe_refund($ini, $db, $order) {
+    $o = new Order($order);
+    $amount = $o->sumActiveAmounts($db) * 100;
 
-    $re = \Stripe\Refund::create(['payment_intent' =>  $order->payment_intent_id ]);
-    if ($re->status === 'succeeded') {
-        return true;
-    } else {
-        error_log('Invalid response from Stripe: ' . $re->status);
-        return false;
-    }
+    // process partial refund
+    $stripeHelper = new StripeHelper($ini);
+    $stripeHelper->refundPartialAmount($o, $amount);
+    return true;
 }
 
 function process_refund($ini, $db, $order) {
     if ($order->payment_method === 'CARD') {
-        if (process_stripe_refund($ini, $order)) {
+        if (process_stripe_refund($ini, $db, $order)) {
             mark_order_as_refunded($db, $order->id);
         }
     } else {
@@ -163,9 +166,6 @@ function select_only_ids($items) {
 function process_line_by_line_items($ini, $db, $items, $order) {
     mysqli_begin_transaction($db);
     try {
-        // TODO: validate order items...? 
-
-
         $o = new Order($order);
 
         // handle the refunded items
@@ -225,25 +225,30 @@ try {
 
             $order = find_order_by_order_uuid_with_db($db, $conData, $data['orderId']);
             if ($order->status === 'CHECKED_OUT' || $order->status === 'PAID') {
+                $nextCon = find_next_con($db);
 
                 if ($data['action'] === 'MARK_AS_PAID') {
                     mark_order_as_paid($db, $order->id);
                     send_marked_as_paid_email($ini, $db, $conData, $order);
                 } else if ($data['action'] === 'CANCEL' && $order->status !== 'PAID') {
                     mark_order_as_cancelled($db, $order->id);
+                    PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     remove_order_registrations($db, $conData, $order->id);
                 } else if ($data['action'] === 'REFUND' && $order->status === 'PAID') {
                     process_refund($ini, $db, $order);
                     remove_order_registrations($db, $conData, $order->id);
+                    PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     http_response_code(201);
                 } else if ($data['action'] === 'CONVERT_TO_DONATION' && $order->status === 'PAID' && $data['donationType']) {
                     convert_to_donation($db, $data['donationType'], $order->id);
                     remove_order_registrations($db, $conData, $order->id);
+                    PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     compose_email($ini, $db, $conData, $order->confirmation_email, $order->payment_method, $order, get_client_locale(), false, true);
                     http_response_code(201);
                 } else if ($data['action'] === 'DEFER') {
                     $nextCon = find_next_con($db);
                     defer_order_to_later($db, $conData, $nextCon, $order->id);
+                    PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     http_response_code(201);
                 } else if ($data['action'] === 'LINE_BY_LINE' && array_key_exists('items', $data)) {
                     process_line_by_line_items($ini, $db, $data['items'], $order);

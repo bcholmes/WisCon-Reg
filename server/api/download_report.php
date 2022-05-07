@@ -33,6 +33,7 @@ try {
     try {
 
         $conData = find_current_con_with_db($db);
+        $nextCon = find_next_con($db);
 
         $date = new DateTime();
         $formattedDate = date_format($date, 'Y-m-d-H.i.s');
@@ -44,7 +45,7 @@ try {
             $query = <<<EOD
         SELECT 
                 o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title,
-                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.item_status
+                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.status as item_status, o.con_id
         FROM 
                 reg_order o
         LEFT OUTER JOIN reg_order_item i
@@ -53,13 +54,13 @@ try {
         LEFT OUTER JOIN reg_offering off
                 ON 
                     i.offering_id = off.id
-        WHERE o.con_id  = ?
+        WHERE (o.con_id = ? or off.con_id = ?)
             AND o.status != 'IN_PROGRESS'
         ORDER BY o.finalized_date, o.id, i.id
     EOD;
 
             $stmt = mysqli_prepare($db, $query);
-            mysqli_stmt_bind_param($stmt, "i", $conData->id);
+            mysqli_stmt_bind_param($stmt, "ii", $conData->id, $conData->id);
             if (mysqli_stmt_execute($stmt)) {
 
                 header("Content-disposition: attachment; filename=" . str_replace(' ', '_', strtolower($conData->name)) .  "-registration-" . $formattedDate . ".csv");
@@ -92,6 +93,11 @@ try {
                         echo ",\"\"";
                     } else {
                         echo ",\"" . $row->age . "\"";
+                    }
+                    if ($row->con_id != $conData->id) {
+                        echo ",\"" . $nextCon->name . "\"";
+                    } else {
+                        echo ",\"" . $conData->name . "\"";
                     }
                     echo "\n";
                 }

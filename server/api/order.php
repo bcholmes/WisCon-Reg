@@ -86,6 +86,31 @@ EOD;
         }
     }
 
+    public function sumActiveAmounts($db) {
+
+        $query = <<<EOD
+        SELECT sum(amount) as amount
+         FROM reg_order_item
+        WHERE order_id = ?
+          AND status is NULL;
+EOD;
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $this->id);
+
+        if ($stmt->execute()) {
+            $result = null;
+            $resultSet = mysqli_stmt_get_result($stmt);
+            if (mysqli_num_rows($resultSet) == 1) {
+                $record = mysqli_fetch_object($resultSet);
+                $result = $record->amount;
+            }
+            mysqli_stmt_close($stmt);
+            return $result;
+        } else {
+            throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
     public function updateItemStatus($db, $items, $status) {
         $idList = implode_and_escape_ids($db, $items);
         $safeStatus = $db->escape_string($status);

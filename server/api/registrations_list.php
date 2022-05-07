@@ -31,6 +31,7 @@ function filter_clause($db, $term) {
 }
 
 function find_registrations($conData, $db, $term, $page, $pageSize) {
+    $nextCon = find_next_con($db);
     $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
     $filterQuery = filter_clause($db, $term);
@@ -39,7 +40,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
     $query = <<<EOD
     SELECT 
             o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name, 
-            i.email_address, i.amount, off.title, i.status as item_status
+            i.email_address, i.amount, off.title, i.status as item_status, o.con_id
     FROM 
             reg_order o
     LEFT OUTER JOIN reg_order_item i
@@ -48,7 +49,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
     LEFT OUTER JOIN reg_offering off
             ON 
                 i.offering_id = off.id
-    WHERE o.con_id  = ?
+    WHERE (o.con_id  = ? or off.con_id = ?)
         AND o.status != 'IN_PROGRESS'
         $filterQuery
     ORDER BY o.id, i.id
@@ -56,7 +57,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
     EOD;
 
     $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "i", $conData->id);
+    mysqli_stmt_bind_param($stmt, "ii", $conData->id, $conData->id);
     if (mysqli_stmt_execute($stmt)) {
 
         $items = array();
@@ -76,6 +77,9 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
                 "item_status" => $row->item_status,
                 "payment_method" => format_payment_type_for_display($row->payment_method, $locale)
             );
+            if ($row->con_id != $conData->id) {
+                $current['deferred'] = array("name" => $nextCon->name);
+            }
             if ($row->finalized_date) {
                 $date = convert_database_date_to_date($row->finalized_date);
                 $current['finalized_date'] = date_format($date, 'c');
