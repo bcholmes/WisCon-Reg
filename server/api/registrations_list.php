@@ -108,14 +108,14 @@ function count_registrations($conData, $db, $term) {
     LEFT OUTER JOIN reg_offering off
             ON 
                 i.offering_id = off.id
-    WHERE o.con_id  = ?
+    WHERE (o.con_id  = ? or off.con_id = ?)
       AND o.status != 'IN_PROGRESS'
         $filterQuery
     ORDER BY o.finalized_date, o.id, i.id
     EOD;
 
     $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "i", $conData->id);
+    mysqli_stmt_bind_param($stmt, "ii", $conData->id, $conData->id);
     if (mysqli_stmt_execute($stmt)) {
 
         $count = 0;

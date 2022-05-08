@@ -65,12 +65,11 @@ function find_order_and_items_by_order_uuid($db, $conData, $order_uuid, $locale)
    FROM 
         reg_order o
   WHERE 
-        o.order_uuid = ? AND
-        o.con_id  = ?;
+        o.order_uuid = ?;
  EOD;
 
     $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "si", $order_uuid, $conData->id);
+    mysqli_stmt_bind_param($stmt, "s", $order_uuid);
     if (mysqli_stmt_execute($stmt)) {
         $result = mysqli_stmt_get_result($stmt);
         if (mysqli_num_rows($result) == 1) {
@@ -103,6 +102,10 @@ function find_order_and_items_by_order_uuid($db, $conData, $order_uuid, $locale)
 
                     "items" => $items
                 );
+                if ($row->con_id != $conData->id) {
+                    $nextCon = find_next_con($db);
+                    $order['deferred'] = array("name" => $nextCon->name);
+                }
                 return $order;
             }
         } else {

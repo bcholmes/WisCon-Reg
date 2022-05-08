@@ -57,7 +57,7 @@ class RegistrationsPage extends Component {
         }
 
         let rows = this.state.items ? this.state.items.map((item, i) => {
-            return (<tr key={item.id + '-' + i}  onClick={() => {this.openOrder(item)}} role="button" className={this.isInactive(item) ? 'inactive-order' : ''}>
+            return (<tr key={item.id + '-' + i}  onClick={() => {this.openOrder(item)}} role="button" className={this.isInactiveOrDeferred(item) ? 'inactive-order' : ''}>
                 <td className="text-right">{item.id}</td>
                 <td><time dateTime={item.finalized_date}>{item.finalized_date_simple}</time></td>
                 <td>{item.title}</td>
@@ -139,8 +139,8 @@ class RegistrationsPage extends Component {
         );
     }
 
-    isInactive(item) {
-        return (item.status !== 'CHECKED_OUT' && item.status !== 'PAID') || item.item_status != null;
+    isInactiveOrDeferred(item) {
+        return (item.status !== 'CHECKED_OUT' && item.status !== 'PAID') || item.item_status != null || item.deferred != null;
     }
 
     renderLinks() {
@@ -164,7 +164,7 @@ class RegistrationsPage extends Component {
                     ? (((this.state.pagination.page + 1).toString()) === link['name'] ? "active" : "") 
                     : "";
                 let pageItemClass = "page-item " + active;
-                return (<li className={pageItemClass} key={'link-' + i}><a className="page-link" href="#" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
+                return (<li className={pageItemClass} key={'link-' + i}><a className="page-link" href="./admin" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
             });
             return (<ul className="pagination">{items}</ul>);
         } else {

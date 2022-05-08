@@ -119,6 +119,7 @@ class AdminOrderSummary extends Component {
                             </tr><tr>
                                 <th className="pr-2">Confirmation email: </th><td> {this.state.order.confirmationEmail}</td>
                             </tr>
+                            {this.state.order.deferred != null ? (<tr><th>Deferred to:</th><td>{this.state.order.deferred.name}</td></tr>) : null}
                         </tbody>
                     </table>
 
