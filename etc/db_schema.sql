@@ -415,3 +415,29 @@ alter table reg_order_item add orig_offering_id int references reg_offering(`id`
 alter table reg_order_item add `status` varchar(32);
 
 alter table reg_order add orig_order_id int references reg_order(`id`) ON DELETE SET NULL;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'Adult Comped Membership', 1, '2022-05-31 23:59:59', 0.00,
+'Create a free adult membership using donated funds', 
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'Teen Comped Membership', 1, '2022-05-31 23:59:59', 0.00,
+'Create a free teen membership using donated funds', 
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
+from reg_offering;

@@ -366,6 +366,8 @@ class AdminOrderSummary extends Component {
         let data = { action: this.getFormValue("action"), orderId: this.state.order.orderUuid };
         if (this.isLineByLineUpdateMode()) {
             data['items'] = this.formatItemsForRest();
+        } else if (data['action'] === 'CONVERT_TO_DONATION') {
+            data["donationType"] = this.getFormValue("donationType");
         }
 
         axios.post('/api/update_order.php', data, {
