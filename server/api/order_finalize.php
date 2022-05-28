@@ -123,7 +123,7 @@ function process_stripe_status($ini, $db, $order, $paymentMethod) {
     
         $payment_intent = \Stripe\PaymentIntent::retrieve($order->payment_intent_id, []);
         if ($payment_intent->status === 'succeeded') {
-            return mark_order_as_paid($db, $order->id);
+            return mark_order_as_paid($db, $order->id, null);
         } else {
             return false;
         }
