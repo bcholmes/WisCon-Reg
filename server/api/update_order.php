@@ -227,8 +227,8 @@ try {
             if ($order->status === 'CHECKED_OUT' || $order->status === 'PAID') {
                 $nextCon = find_next_con($db);
 
-                if ($data['action'] === 'MARK_AS_PAID') {
-                    mark_order_as_paid($db, $order->id);
+                if ($data['action'] === 'MARK_AS_PAID' && array_key_exists('atDoorPaymentMethod', $data)) {
+                    mark_order_as_paid($db, $order->id, $data['atDoorPaymentMethod']);
                     send_marked_as_paid_email($ini, $db, $conData, $order);
                 } else if ($data['action'] === 'CANCEL' && $order->status !== 'PAID') {
                     mark_order_as_cancelled($db, $order->id);

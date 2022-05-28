@@ -78,6 +78,7 @@ class AdminOrderSummary extends Component {
                             </div>
                         </Form.Group>
                         {this.createDonationChoice()}
+                        {this.renderMarkAsPaidChoice()}
 
                         <div className="text-right">
                             <Button variant="link" onClick={() => this.updateMode(false)} >
@@ -205,6 +206,24 @@ class AdminOrderSummary extends Component {
         }
     }
 
+    renderMarkAsPaidChoice() {
+        if (this.state.updateMode && this.state.values && this.state.values.action === 'MARK_AS_PAID') {
+            return (<Form.Group controlId="atDoorPaymentMethod" className="row">
+                        <div className="offset-md-3 col-md-6">
+                            <Form.Label className="sr-only">Donation type:</Form.Label>
+                            <Form.Control as="select" onChange={(e) => this.setFormValue("atDoorPaymentMethod", e.target.value)} key="atDoorPaymentMethod">
+                                <option value="">Choose payment method...</option>
+                                <option value="CASH">Cash</option>
+                                <option value="CHEQUE">Check</option>
+                                <option value="CARD">Credit Card (manually processed)</option>
+                            </Form.Control>
+                        </div>
+                    </Form.Group>
+            );
+        } else {
+            return undefined;
+        }
+    }
     resendEmail() {
         axios.post('/api/resend_email.php', { orderId: this.state.order.orderUuid}, {
             headers: {
@@ -287,6 +306,8 @@ class AdminOrderSummary extends Component {
     isUpdateEnabled() {
         if (this.state.values['action'] === 'CONVERT_TO_DONATION' && !this.state.values['donationType']) {
             return false;
+        } else if (this.state.values['action'] === 'MARK_AS_PAID' && !this.state.values['atDoorPaymentMethod']) {
+            return false;
         } else {
             return this.state.values['action'];
         }
@@ -368,6 +389,8 @@ class AdminOrderSummary extends Component {
             data['items'] = this.formatItemsForRest();
         } else if (data['action'] === 'CONVERT_TO_DONATION') {
             data["donationType"] = this.getFormValue("donationType");
+        } else if (data['action'] === 'MARK_AS_PAID') {
+            data["atDoorPaymentMethod"] = this.getFormValue("atDoorPaymentMethod");
         }
 
         axios.post('/api/update_order.php', data, {

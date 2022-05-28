@@ -55,6 +55,8 @@ function format_payment_type_for_display($payment_type, $locale) {
         return 'Check';
     } else if ($payment_type === 'CHEQUE') {
         return 'Cheque';
+    } else if ($payment_type === 'AT_DOOR') {
+        return 'At Door';
     } else if ($payment_type === 'NO_CHARGE') {
         return 'No Charge';
     } else {

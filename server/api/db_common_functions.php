@@ -199,18 +199,19 @@ function mark_order_as_finalized($db, $order_id, $payment_method, $email_address
     }
 }
 
-function mark_order_as_paid($db, $order_id) {
+function mark_order_as_paid($db, $order_id, $atDoorPaymentMethod) {
     $query = <<<EOD
  UPDATE reg_order
     SET payment_date = now(),
         status = 'PAID',
-        last_modified_date = now()
+        last_modified_date = now(),
+        at_door_payment_method = ?
   WHERE id = ?;
  EOD;
 
     mysqli_set_charset($db, "utf8");
     $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "i", $order_id);
+    mysqli_stmt_bind_param($stmt, "si", $atDoorPaymentMethod, $order_id);
 
     if ($stmt->execute()) {
         mysqli_stmt_close($stmt);

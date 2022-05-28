@@ -441,3 +441,55 @@ insert into reg_offering_highlight
 select max(id),
 1, 'This is a secret item, covered with a cloak of invisibility'
 from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(24, 'Online Membership (reduced price)', 1, '2022-05-31 23:59:59', 25.00, 
+'The Online Membership provides access to the online portion of WisCon 2022 (visit https://wiscon.net/register/ for more information)', 
+'Y', 'Y', 'REQUIRED');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Access to all online programming and events'
+from reg_offering;
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(15, '1-Day Membership (Saturday)', 1, '2022-05-31 23:59:59', 35.00, 
+'This membership gives you access to all in-person and online programming and events on Saturday.', 
+'Y', 'Y', 'REQUIRED');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Saturday events'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 19+'
+from reg_offering;
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required)
+values
+(16, '1-Day Membership (Sunday)', 1, '2022-05-31 23:59:59', 30.00, 
+'This membership gives you access to all in-person and online programming and events on Sunday.', 
+'Y', 'Y', 'REQUIRED');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Sunday events'
+from reg_offering;
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 19+'
+from reg_offering;

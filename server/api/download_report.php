@@ -45,7 +45,8 @@ try {
             $query = <<<EOD
         SELECT 
                 o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title,
-                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.status as item_status, o.con_id
+                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.status as item_status, 
+                o.con_id, o.at_door_payment_method
         FROM 
                 reg_order o
         LEFT OUTER JOIN reg_order_item i
@@ -75,6 +76,8 @@ try {
                         $paid = 'Cancelled';
                     } else if ($row->status === 'REFUNDED' || $row->item_status === 'REFUNDED') {
                         $paid = 'Refunded';
+                    } else if ($row->status === 'PAID' && $row->at_door_payment_method) {
+                        $paid = 'Yes (' . format_payment_type_for_display($row->at_door_payment_method, $locale) . ")";
                     } else if ($row->status === 'PAID') {
                         $paid = 'Yes';
                     }

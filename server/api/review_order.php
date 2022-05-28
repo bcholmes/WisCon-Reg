@@ -61,7 +61,7 @@ function find_order_items($db, $orderId) {
 function find_order_and_items_by_order_uuid($db, $conData, $order_uuid, $locale) {
     $query = <<<EOD
  SELECT 
-        o.id, o.status, o.confirmation_email, o.payment_method, o.finalized_date, o.payment_date
+        o.id, o.status, o.confirmation_email, o.payment_method, o.finalized_date, o.payment_date, o.con_id
    FROM 
         reg_order o
   WHERE 

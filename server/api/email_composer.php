@@ -173,7 +173,13 @@ function compose_email($ini, $db, $conData, $email_address, $payment_method, $or
         <p>You have elected to pay for these items in cash at the registration desk. Your membership 
         will be ready for pick-up, but the final balance must be paid at that time.</p>
 EOD;
-        } else if ($payment_method === 'NO_CHARGE') {
+        } else if ($payment_method === 'AT_DOOR') {
+            $payment_text = <<<EOD
+        <p>You have elected to pay for these items at the registration desk. Your membership 
+        will be ready for pick-up, but the final balance must be paid at that time using cash, a credit card, or $cheque.</p>
+EOD;
+
+} else if ($payment_method === 'NO_CHARGE') {
             $payment_text = <<<EOD
         <p>Because you've only selected free items, your order does not require payment.</p>
 EOD;

@@ -218,7 +218,7 @@ class CheckoutPage extends Component {
                     </Card>
                     <Card>
                         <Accordion.Toggle as={Card.Header}  variant="link" eventKey="2">
-                            Pay at Door with Cash
+                            Pay at the Registration Desk (Cash, Credit Card, etc.)
                         </Accordion.Toggle>
                         <Accordion.Collapse eventKey="2">
                             <Card.Body>
@@ -227,7 +227,7 @@ class CheckoutPage extends Component {
                                     attend. At the convention, you will need to pay in full ({total}) when picking up 
                                     your badge(s) and/or dessert ticket(s).</p>
 
-                                <Button onClick={() => this.processPayment('CASH')}>Pay at door</Button>
+                                <Button onClick={() => this.processPayment('AT_DOOR')}>Pay at door</Button>
                             </Card.Body>
                         </Accordion.Collapse>
                     </Card>
