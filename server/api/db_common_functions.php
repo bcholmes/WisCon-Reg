@@ -43,7 +43,7 @@ function connect_to_db($db_ini) {
 function find_current_con_with_db($db) {
     $query = <<<EOD
     SELECT 
-           c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
+           c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date, c.reg_close_time
       FROM 
            reg_con_info c, reg_perennial_con_info p
      WHERE 

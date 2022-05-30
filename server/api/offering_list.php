@@ -133,7 +133,7 @@ try {
         $conData = find_current_con_with_db($db);
         $now = date("Y-m-d H:i:s");
 
-        if ($now > $conData->con_end_date) {
+        if ($now > $conData->reg_close_time) {
             header('Content-type: application/json');
             $result = array( "reg_closed" => true);
             echo json_encode($result);
