@@ -140,13 +140,15 @@ try {
         } else {
             $items = find_offerings($conData, $db);
 
-            if ($items != false) {
+            if ($items != false && count($items) > 0) {
                 header('Content-type: application/json');
                 $result = array( "reg_closed" => false, "items" => $items);
                 $json_string = json_encode($result);
                 echo $json_string;
             } else {
-                http_response_code(500);
+                header('Content-type: application/json');
+                $result = array( "reg_closed" => true);
+                echo json_encode($result);
             }
         }
 

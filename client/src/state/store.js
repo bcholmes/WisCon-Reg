@@ -4,6 +4,7 @@ import { ADD_STRIPE_SECRET, ADD_TO_CART, CLEAR_CART, REMOVE_FROM_CART } from './
 import { SET_OFFERINGS } from './offeringActions';
 import { ADD_MESSAGE, REMOVE_MESSAGE } from './pageMessageActions';
 import { v4 as uuidv4 } from 'uuid';
+import { con } from './conReducer';
 
 const offeringInitialState = {
     loading: true,
@@ -115,7 +116,8 @@ const reducer = combineReducers({
     offerings,
     cart,
     auth,
-    pageMessage
+    pageMessage,
+    con: con
 })
 const store = createStore(reducer);
 

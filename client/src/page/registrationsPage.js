@@ -14,6 +14,8 @@ import PageHeader from '../component/pageHeader';
 import { isAuthenticated } from '../util/jwtUtil';
 import store from '../state/store';
 import { logoutWithMessage } from '../state/authActions';
+import { connect } from 'react-redux';
+import ConSelection from '../component/conSelection';
 
 class RegistrationsPage extends Component {
 
@@ -24,7 +26,9 @@ class RegistrationsPage extends Component {
                 rows: []
             },
             loading: false,
-            term: ''
+            term: '',
+            showConSelection: false,
+            con: null
         }
     }
 
@@ -91,7 +95,10 @@ class RegistrationsPage extends Component {
         return (
             <Container className="mx-auto">
                 <PageHeader />
-                <h1>Registration List</h1>
+                <div className="d-flex justify-content-between align-items-baseline mb-3">
+                        <h1>Registration List</h1>
+                        {this.renderConButton()}
+                </div>
                 {message}
                 {warning}
                 <div className="row mb-3">
@@ -134,9 +141,38 @@ class RegistrationsPage extends Component {
                     </tbody>
                     {linkFooter}
                 </table>
+                <ConSelection show={this.state.showConSelection} onClose={(con) => this.selectCon(con) }/>
                 <Footer />
             </Container>
         );
+    }
+
+    renderConButton() {
+        if (this.props.currentCon != null || this.state.con != null) {
+            let con = this.state.con != null ? this.state.con : this.props.currentCon;
+            return (<Button variant='link' className="text-muted" type="button" 
+                onClick={() => { this.setState((state) => ({...state, showConSelection: true }))}}
+                >
+                <span className="small">{con.name}</span></Button>);
+        } else {
+            return undefined;
+        }
+    }
+
+    selectCon(con) {
+        if (con != null) {
+            this.setState((state) => ({
+                ...state,
+                con: con,
+                showConSelection: false
+            }));
+            this.loadDataForCon(con);
+        } else {
+            this.setState((state) => ({
+                ...state,
+                showConSelection: false
+            }));
+        }
     }
 
     isInactiveOrDeferred(item) {
@@ -206,8 +242,9 @@ class RegistrationsPage extends Component {
     }
 
     async downloadReport() {
+        let parameters = this.state.con ? ("?conId=" + this.state.con.id) : ""
 
-        axios.get('/api/download_report.php', {
+        axios.get('/api/download_report.php' + parameters, {
                 headers: {
                     "Authorization": "Bearer " + store.getState().auth.jwt
                 }
@@ -266,13 +303,15 @@ class RegistrationsPage extends Component {
     loadData() {
         this.loadDataWithUrl('/api/registrations_list.php');
     }
+    loadDataForCon(con) {
+        this.loadDataWithUrl('/api/registrations_list.php?conId=' + con.id);
+    }
     loadDataWithUrl(url) {
-        let state = this.state;
-        this.setState({
+        this.setState((state) => ({
             ...state,
             loading: true,
             lastLoadedUrl: url
-        });
+        }));
 
         if (isAuthenticated()) {
             axios.get(url, {
@@ -281,24 +320,22 @@ class RegistrationsPage extends Component {
                 }
             })
             .then(res => {
-                let state = this.state;
-                this.setState({
+                this.setState((state) => ({
                     ...state,
                     loading: false,
                     message: null,
                     items: res.data.items,
                     pagination: res.data.pagination,
                     links: res.data.links
-                })
+                }));
             })
             .catch(error => {
-                let state = this.state;
                 let message = "The registration list could not be loaded."
-                this.setState({
+                this.setState((state) => ({
                     ...state,
                     loading: false,
                     message: message
-                })
+                }));
                 if (error.response && error.response.status === 401) {
                     this.forceLogout();
                 }
@@ -323,4 +360,8 @@ class RegistrationsPage extends Component {
     }
 }
 
-export default withRouter(RegistrationsPage);
+function mapStateToProps(state) {
+    return { currentCon: state.con.currentCon };
+}
+
+export default withRouter(connect(mapStateToProps)(RegistrationsPage));

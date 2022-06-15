@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {connect} from 'react-redux';
 import axios from 'axios';
 
 import Button from 'react-bootstrap/Button'
@@ -12,6 +13,7 @@ import store from '../state/store';
 import PropTypes from "prop-types";
 import { withRouter } from "react-router";
 import { sdlc } from '../util/sdlcUtil';
+import { fetchCurrentCon } from '../state/conFunctions';
 
 class PageHeader extends Component {
     static propTypes = {
@@ -42,10 +44,13 @@ class PageHeader extends Component {
                 }
             });
         });
-
     }
 
     render() {
+        if (this.props.currentCon == null) {
+            fetchCurrentCon();
+        }
+
         let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
         let adminMenu = this.isAuthenticated() 
             ? (<NavDropdown title={this.getAdminName()} id="admin-nav-dropdown">
@@ -239,4 +244,8 @@ class PageHeader extends Component {
     }
 }
 
-export default withRouter(PageHeader);
+function mapStateToProps(state) {
+    return { currentCon: state.con.currentCon };
+}
+
+export default withRouter(connect(mapStateToProps)(PageHeader));

@@ -1,41 +1,24 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import Alert from 'react-bootstrap/Alert';
+import { connect } from 'react-redux';
 
 import { removeMessage } from '../state/pageMessageActions';
 import store from '../state/store';
 
-class PageMessage extends Component {
+const PageMessage = (props) => {
 
-    constructor(props) {
-        super(props);
-        this.state = { messages: store.getState().pageMessage.messages };
-    }
-
-    componentWillMount() {
-        this.unsubscribe = store.subscribe(() => {
-            this.setState({
-                messages: store.getState().pageMessage.messages
-            });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribe) {
-            this.unsubscribe();
-        }
-    }
-
-
-    render() {
-        return this.state.messages.map((m) => {
-            return (<Alert variant={m.severity} dismissible onClose={() => this.removeMessage(m)}>{m.text}</Alert>)
-        })
-    }
-
-    removeMessage(m) {
+    function removeTheMessage(m) {
         store.dispatch(removeMessage(m));
     }
+
+    return props.messages.map((m) => {
+        return (<Alert variant={m.severity} dismissible onClose={() => removeTheMessage(m)}>{m.text}</Alert>)
+    });
 }
 
-export default PageMessage;
+function mapStateToProps(state) {
+    return { messages: state.pageMessage.messages || [] };
+}
+
+export default connect(mapStateToProps)(PageMessage);

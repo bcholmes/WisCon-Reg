@@ -18,6 +18,7 @@ require_once("config.php");
 require_once("db_common_functions.php");
 require_once("jwt_functions.php");
 require_once("format_functions.php");
+require_once("con_info.php");
 
 function filter_clause($db, $term) {
     $filterQuery = "";
@@ -31,7 +32,6 @@ function filter_clause($db, $term) {
 }
 
 function find_registrations($conData, $db, $term, $page, $pageSize) {
-    $nextCon = find_next_con($db);
     $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
     $filterQuery = filter_clause($db, $term);
@@ -58,6 +58,7 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
 
     $stmt = mysqli_prepare($db, $query);
     mysqli_stmt_bind_param($stmt, "ii", $conData->id, $conData->id);
+    $cons = array();
     if (mysqli_stmt_execute($stmt)) {
 
         $items = array();
@@ -78,6 +79,11 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
                 "payment_method" => format_payment_type_for_display($row->payment_method, $locale)
             );
             if ($row->con_id != $conData->id) {
+                if (!array_key_exists($row->con_id, $cons)) {
+                    $temp = ConInfo::findById($db, $row->con_id);
+                    $cons[$row->con_id] = $temp;
+                }
+                $nextCon = $cons[$row->con_id];
                 $current['deferred'] = array("name" => $nextCon->name);
             }
             if ($row->finalized_date) {
@@ -130,7 +136,7 @@ function count_registrations($conData, $db, $term) {
     }
 }
 
-function determine_links($baseUrl, $items, $count, $PAGE_SIZE) {
+function determine_links($baseUrl, $items, $count, $PAGE_SIZE, $conId) {
     $links = array();
     if (count($items) < $count) {
         $totalPages = floor(($count + $PAGE_SIZE - 1) / $PAGE_SIZE);
@@ -138,7 +144,7 @@ function determine_links($baseUrl, $items, $count, $PAGE_SIZE) {
         $links['end'] = $baseUrl . 'page=' . ($totalPages -1);
 
         for ($i = 0; $i < $totalPages; $i++) {
-            $links[$i+1] = $baseUrl . 'page=' . $i;
+            $links[$i+1] = $baseUrl . 'page=' . $i . ($conId != null ? ("&conId=" . $conId) : "");
         }
     }
     return $links;
@@ -147,8 +153,8 @@ function determine_links($baseUrl, $items, $count, $PAGE_SIZE) {
 $ini = read_ini();
 $db = connect_to_db($ini);
 try {
-    $conData = find_current_con_with_db($db);
-
+    $conId = array_key_exists("conId", $_REQUEST) ? $_REQUEST["conId"] : null;
+    $conData = $conId != null ? ConInfo::findById($db, $conId) : ConInfo::findCurrentCon($db);
 
     $PAGE_SIZE = 50;
     $term = array_key_exists('term', $_REQUEST) ? $_REQUEST['term'] : null;
@@ -178,7 +184,7 @@ try {
                 "page" => $page,
                 "totalRows" => $count
             ),
-            "links" => determine_links($baseUrl, $items, $count, $PAGE_SIZE)
+            "links" => determine_links($baseUrl, $items, $count, $PAGE_SIZE, $conId)
         );
         $json_string = json_encode($result);
         echo $json_string;

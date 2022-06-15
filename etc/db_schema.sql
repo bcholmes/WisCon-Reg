@@ -66,6 +66,10 @@ insert into reg_con_info (name, perennial_con_id, con_start_date, con_end_date, 
 select 'WisCon 2023', max(id), '2023-05-25', '2023-05-29', '2022-06-01 23:39:39', '2023-05-31 23:39:39', '2022-06-01 23:39:39', '2023-05-31 23:39:39'
 from reg_perennial_con_info;
 
+insert into reg_con_info (name, perennial_con_id, con_start_date, con_end_date, active_from_time, active_to_time, reg_open_time, reg_close_time) 
+select 'WisCon 2024', max(id), '2024-05-23', '2024-05-27', '2023-06-01 23:39:39', '2024-05-31 23:39:39', '2023-09-01 23:39:39', '2024-05-31 23:39:39'
+from reg_perennial_con_info;
+
 
 create view reg_users as 
 SELECT distinct P.badgeid, P.password, C.firstname, C.lastname, C.badgename, C.email
@@ -493,3 +497,5 @@ insert into reg_offering_highlight
 select max(id),
 2, 'Ages 19+'
 from reg_offering;
+
+alter table reg_order add column `at_door_payment_method` varchar(32) DEFAULT NULL;

@@ -18,6 +18,7 @@ require_once("config.php");
 require_once("db_common_functions.php");
 require_once("format_functions.php");
 require_once("jwt_functions.php");
+require_once("con_info.php");
 
 function yes_no($value) {
     if ($value === 'Y') {
@@ -32,8 +33,10 @@ try {
     $db = connect_to_db($ini);
     try {
 
+        $conId = array_key_exists("conId", $_REQUEST) ? $_REQUEST["conId"] : null;
+
         $conData = find_current_con_with_db($db);
-        $nextCon = find_next_con($db);
+        $requestedConData = $conId ? ConInfo::findById($db, $conId) : ConInfo::findCurrentCon($db);
 
         $date = new DateTime();
         $formattedDate = date_format($date, 'Y-m-d-H.i.s');
@@ -61,15 +64,16 @@ try {
     EOD;
 
             $stmt = mysqli_prepare($db, $query);
-            mysqli_stmt_bind_param($stmt, "ii", $conData->id, $conData->id);
+            mysqli_stmt_bind_param($stmt, "ii", $requestedConData->id, $requestedConData->id);
             if (mysqli_stmt_execute($stmt)) {
 
-                header("Content-disposition: attachment; filename=" . str_replace(' ', '_', strtolower($conData->name)) .  "-registration-" . $formattedDate . ".csv");
+                header("Content-disposition: attachment; filename=" . str_replace(' ', '_', strtolower($requestedConData->name)) .  "-registration-" . $formattedDate . ".csv");
                 header('Content-type: text/csv');
                 echo 'Order Number, Confirmation Sent To, Purchase Item, Check-out Date, Paid, Amount, Name, Email, Payment Method, Send Email, Volunteer, Snail Mail OK, Age of Child';
                 echo "\n";
                 
                 $result = mysqli_stmt_get_result($stmt);
+                $cons = array();
                 while ($row = mysqli_fetch_object($result)) {
                     $paid = 'No';
                     if ($row->status === 'CANCELLED' || $row->item_status === 'CANCELLED') {
@@ -97,10 +101,18 @@ try {
                     } else {
                         echo ",\"" . $row->age . "\"";
                     }
-                    if ($row->con_id != $conData->id) {
-                        echo ",\"" . $nextCon->name . "\"";
+                    if ($row->con_id != $requestedConData->id) {
+                        if (array_key_exists($row->con_id, $cons)) {
+                            $otherCon = ConInfo::findById($db, $row->con_id);
+                            $cons[$otherCon->id] = $otherCon;
+                            unset($otherCon);
+                        }
+
+                        $otherCon = $cons[$row->con_id];
+
+                        echo ",\"" . $otherCon->name . "\"";
                     } else {
-                        echo ",\"" . $conData->name . "\"";
+                        echo ",\"" . $requestedConData->name . "\"";
                     }
                     echo "\n";
                 }
