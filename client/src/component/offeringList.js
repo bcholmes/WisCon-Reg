@@ -15,6 +15,7 @@ import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
 import { sdlc } from '../util/sdlcUtil';
 import { isAdmin } from '../state/authActions';
+import { renderPrice } from '../state/offeringFunctions';
 
 class OfferingList extends Component {
 
@@ -49,8 +50,6 @@ class OfferingList extends Component {
                 let highlights = o.highlights.map((h, i) => {
                     return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
                 })
-                let price = o.suggestedPrice === undefined || o.suggestedPrice === null ? 'Any' : (o.suggestedPrice ===  0 ? 'Free' : ('$' + o.suggestedPrice.toFixed(0)));
-                let priceSuffix = this.isVariableAmount(o) ? (<small className="text-muted">+/-</small>) : undefined;
 
                 if (o.remaining != null && o.remaining <= 0) {
                     return undefined;
@@ -64,7 +63,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
+                                <h1 className="card-title pricing-card-title">{renderPrice(o)}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {this.supplyNotes(o)}
                                 {highlights}
@@ -82,7 +81,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
+                                <h1 className="card-title pricing-card-title">{renderPrice(o)}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {this.supplyNotes(o)}
                                 {highlights}
@@ -108,8 +107,8 @@ class OfferingList extends Component {
                 <Form.Label className="sr-only">{emailLabel}</Form.Label>
                 <Form.Control className={this.getErrorClass('email')} type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
                 <Form.Text className="text-muted">
-                    Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
-                    sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
+                    Provide a current email address to which information about this membership and the upcoming WisCon convention can be
+                    sent. This email will not be used or shared for any other purpose without your consent. (If you are also
                     signing up for WisCon programming, please provide the same email address here so that we can match your profiles.)
                 </Form.Text>
             </Form.Group>);
@@ -128,7 +127,7 @@ class OfferingList extends Component {
                     </Form.Text>
                 </Form.Group>);
             } else if (this.isVariableAmount(this.state.selectedOffering)) {
-                let guidance = (this.state.selectedOffering.maximumPrice != null) 
+                let guidance = (this.state.selectedOffering.maximumPrice != null)
                     ? ' Please choose an amount between ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + ' and ' + formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency) + '.'
                     : ' Please choose an amount greater than or equal to ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + '.';
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
@@ -141,7 +140,7 @@ class OfferingList extends Component {
                 </Form.Group>);
             }
 
-            let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts) 
+            let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts)
                 ? [
                     <Form.Check className="mb-3" id="volunteer" key="form-volunteer" onClick={(e) => this.setFormValue('volunteer', e.target.checked)}
                             label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />,
@@ -163,7 +162,7 @@ class OfferingList extends Component {
             </Form.Text>
         </Form.Group>) : undefined;
 
-            let addressFields = (this.isAddressRequired()) 
+            let addressFields = (this.isAddressRequired())
                 ? [
                     <Form.Group controlId="streetLine1" key="streetLine1">
                         <Form.Label className="sr-only">Street Line 1</Form.Label>
@@ -447,7 +446,7 @@ class OfferingList extends Component {
                         <option>Zambia</option>
                         <option>Zimbabwe</option>
                     </Form.Control>
-            ] 
+            ]
                 : undefined;
 
             return (
@@ -468,8 +467,8 @@ class OfferingList extends Component {
                                     <Form.Label className="sr-only">Name</Form.Label>
                                     <Form.Control className={this.getErrorClass('for')} type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
                                     <Form.Text className="text-muted">
-                                    Please provide the full name of the person associated with this membership/item. This does not need to 
-                                    be a wallet name. By default this name will appear on your badge, but you can change your badge name 
+                                    Please provide the full name of the person associated with this membership/item. This does not need to
+                                    be a wallet name. By default this name will appear on your badge, but you can change your badge name
                                     by logging in at program.wiscon.net.
                                     </Form.Text>
 

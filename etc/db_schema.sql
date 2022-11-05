@@ -499,3 +499,17 @@ select max(id),
 from reg_offering;
 
 alter table reg_order add column `at_door_payment_method` varchar(32) DEFAULT NULL;
+
+
+insert into reg_offering 
+(sort_order, title, con_id, end_time, description, is_membership, add_prompts, email_required)
+values
+(8, 'Donate', 2, '2023-05-31 23:59:59',  
+'Donations can be used for a variety of purposes. Please choose how you''d like to direct your funds.', 
+'N', 'N', 'NO');
+
+insert into reg_offering_highlight 
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Donations are always welcome!'
+from reg_offering;
