@@ -25,8 +25,3 @@ export function setOfferings(offerings, message = null) {
         payload
      }
 }
-
-export function renderPrice(offering) {
-    console.log(offering);
-    return (offering.suggestedPrice == null) ? 'Any' : (offering.suggestedPrice ===  0 ? 'Free' : ('$' + offering.suggestedPrice.toFixed(0)));
-}

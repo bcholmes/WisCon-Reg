@@ -5,9 +5,10 @@ export const REMOVE_FROM_CART = 'REMOVE_FROM_CART';
 export const CLEAR_CART = 'CLEAR_CART';
 export const ADD_STRIPE_SECRET = 'ADD_STRIPE_SECRET';
 
-export function addToCart(offering, name, values, uuid, amount) {
+export function addToCart(offering, name, values, uuid, amount, variant) {
    let payload = {
       offering: offering,
+      variant: variant,
       for: name,
       values: values,
       amount: amount,

@@ -154,6 +154,17 @@ class OfferingList extends Component {
                 ]
                 : undefined;
 
+            let variantOption = this.isVariantSelectionRequired()
+                ? (<Form.Group className="mb-3" controlId="formVariant">
+                        <Form.Label className="sr-only">Option</Form.Label>
+                        <Form.Control className={this.getErrorClass('variantId')} as="select" value={this.getFormValue('variantId')} onChange={(e) => this.setFormValue("variantId", e.target.value)} key="variant">
+                            <option></option>
+                            {this.state.selectedOffering.variants.map((v, i) => (<option value={v.id}>{v.name + (v.suggestedPrice ? ' - ' + formatAmount(v.suggestedPrice, this.state?.selectedOffering?.currency) : '')}</option>))}
+                        </Form.Control>
+                        {this.selectedVariantDescription()}
+                    </Form.Group>)
+                : null;
+
             let ageField = (this.isAgeRequired()) ? (<Form.Group className="mb-3" controlId="age">
             <Form.Label className="sr-only">Age</Form.Label>
             <Form.Control className={this.getErrorClass('age')} type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
@@ -463,6 +474,7 @@ class OfferingList extends Component {
                             <Modal.Body>
                                 {message}
                                 {description}
+                                {variantOption}
                                 <Form.Group className="mb-3" controlId="formName">
                                     <Form.Label className="sr-only">Name</Form.Label>
                                     <Form.Control className={this.getErrorClass('for')} type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
@@ -489,6 +501,25 @@ class OfferingList extends Component {
                     </Modal>
                 </div>
             );
+        }
+    }
+
+    selectedVariantDescription() {
+        if (this.state?.values?.variantId != null) {
+            let variants = this.state?.selectedOffering?.variants?.filter(v => v?.id?.toString() === this.state?.values?.variantId);
+            if (variants?.length) {
+                return (<Form.Text className="text-muted">
+                        {variants[0].description}
+                    </Form.Text>)
+            } else {
+                return (<Form.Text className="text-muted">
+                        Please choose an option
+                    </Form.Text>);
+            }
+        } else {
+            return (<Form.Text className="text-muted">
+                Please choose an option
+            </Form.Text>);
         }
     }
 
@@ -644,6 +675,13 @@ class OfferingList extends Component {
             }
         }
 
+        if (this.isVariantSelectionRequired()) {
+            if (!values.variantId) {
+                errors['variantId'] = true;
+                messages.push("Please choose an option from this list");
+            }
+        }
+
         if (this.isAddressRequired()) {
             if (!values.streetLine1) {
                 errors['streetLine1'] = true;
@@ -673,6 +711,10 @@ class OfferingList extends Component {
         } else {
             return true;
         }
+    }
+
+    isVariantSelectionRequired() {
+        return this.state?.selectedOffering?.variants != null && this.state?.selectedOffering?.variants?.length > 0;
     }
 
     showModal(offering) {
