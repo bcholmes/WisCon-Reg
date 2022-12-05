@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,14 +21,17 @@ require_once("format_functions.php");
 
 function create_order_items_table($db, $order, $email_address) {
     $query = <<<EOD
-    SELECT 
-            i.for_name, i.email_address, i.amount, off.title, off.currency
-        FROM 
+    SELECT
+            i.for_name, i.email_address, i.amount, off.title, off.currency, v.name
+        FROM
         reg_order_item i
         LEFT OUTER JOIN reg_offering off
-            ON 
+            ON
                 i.offering_id = off.id
-        WHERE i.order_id  = ?
+        LEFT OUTER JOIN reg_offering_variant v
+                ON
+                    i.variant_id = v.id
+            WHERE i.order_id  = ?
         ORDER BY i.id
 EOD;
 
@@ -45,7 +48,9 @@ EOD;
             $amount = format_monetary_amount($row->amount, $row->currency);
             $currency = $row->currency;
 
-            $table_row = "<tr><td style=\"padding-right: 1rem;\">" . $row->title . "</td><td style=\"padding-right: 1rem;\">" . $row->for_name . "</td><td style=\"text-align: right\">" . $amount . "</td></tr>";
+            $table_row = "<tr><td style=\"padding-right: 1rem;\">" . $row->title . ($row->name != null ? (" / " . $row->name) : "")
+                . "</td><td style=\"padding-right: 1rem;\">"
+                . $row->for_name . "</td><td style=\"text-align: right\">" . $amount . "</td></tr>";
             $lines = $lines . $table_row;
             $total += $row->amount;
 
@@ -57,7 +62,7 @@ EOD;
 
         $amount = format_monetary_amount($total, $currency);
         $lines = $lines . "</tbody><tfoot><tr><td colspan=\"2\"><b>Total</b></td><td style=\"text-align: right;\"><b>" . $amount . "</b></td></tr></tfoot></table>";
-    
+
         return array(
             "lines" => $lines,
             "addressee" => $addressee
@@ -70,12 +75,12 @@ EOD;
 
 function find_donations_in_order($db, $order) {
     $query = <<<EOD
-    SELECT 
+    SELECT
             i.amount, off.title, off.currency, off.short_name
-        FROM 
+        FROM
         reg_order_item i
         LEFT OUTER JOIN reg_offering off
-            ON 
+            ON
                 i.offering_id = off.id
         WHERE i.order_id  = ?
           AND off.is_donation = 'Y'
@@ -96,7 +101,7 @@ EOD;
                 $amount = $amount + $row->amount;
                 $donations[$key] = $amount;
             } else {
-                $donations[$key] = $row->amount;     
+                $donations[$key] = $row->amount;
             }
         }
         mysqli_stmt_close($stmt);
@@ -141,13 +146,13 @@ function donation_tax_clause($db, $order) {
             $dateClause = " which was pledged on " . date_format($date, 'M j H:i T');
         }
         $taxClause = <<<EOD
-        <p>SF3, WisCon's parent not-for-profit, would like to thank you for your gift of $gift$dateClause. 
-        SF3 is a 501(c)(3) tax-exempt organization as recognized by the 
-        Internal Revenue Service (EIN 39-1256799). No goods or services, in whole or in part, were 
-        received in exchange for this contribution; therefore, the full amount of your gift is 
-        tax-deductible if you pay taxes in the United States. This note is provided by SF3 in order 
-        to express our gratitude and to comply with the rules and regulations promulgated by the US 
-        Internal Revenue Service. If you pay taxes in the United States, please retain this email 
+        <p>SF3, WisCon's parent not-for-profit, would like to thank you for your gift of $gift$dateClause.
+        SF3 is a 501(c)(3) tax-exempt organization as recognized by the
+        Internal Revenue Service (EIN 39-1256799). No goods or services, in whole or in part, were
+        received in exchange for this contribution; therefore, the full amount of your gift is
+        tax-deductible if you pay taxes in the United States. This note is provided by SF3 in order
+        to express our gratitude and to comply with the rules and regulations promulgated by the US
+        Internal Revenue Service. If you pay taxes in the United States, please retain this email
         with your tax records.</p>
     EOD;
         return $taxClause;
@@ -170,12 +175,12 @@ function compose_email($ini, $db, $conData, $email_address, $payment_method, $or
         $payment_text = "<p>You have chosen to pay for these items using a credit card.</p>";
         if ($payment_method === 'CASH') {
             $payment_text = <<<EOD
-        <p>You have elected to pay for these items in cash at the registration desk. Your membership 
+        <p>You have elected to pay for these items in cash at the registration desk. Your membership
         will be ready for pick-up, but the final balance must be paid at that time.</p>
 EOD;
         } else if ($payment_method === 'AT_DOOR') {
             $payment_text = <<<EOD
-        <p>You have elected to pay for these items at the registration desk. Your membership 
+        <p>You have elected to pay for these items at the registration desk. Your membership
         will be ready for pick-up, but the final balance must be paid at that time using cash, a credit card, or $cheque.</p>
 EOD;
 
@@ -212,7 +217,7 @@ EOD;
             Hello $addressee,
         </p>
         <p>
-            This email confirms your registration for 
+            This email confirms your registration for
             <b>$conData->name</b>.
             $resend_text
         </p>
@@ -224,7 +229,7 @@ EOD;
         $taxClause
         <p>
             $update_text
-            Please reach out to <a href="mailto:$reg_email">Registration</a> if you 
+            Please reach out to <a href="mailto:$reg_email">Registration</a> if you
             have questions about this order or need assistance.
         </p>
         <p>

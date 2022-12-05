@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
-import { renderPrice } from '../state/offeringFunctions';
+import { renderAmountAsHtml, renderAmountAsString, renderPrice } from '../state/offeringFunctions';
 import { isAuthenticated } from '../util/jwtUtil';
 
 import dayjs from "dayjs";
@@ -40,18 +40,14 @@ class AdminOfferingsPage extends React.Component {
                 <thead>
                     <tr>
                         <th>Offering</th>
-                        <th>Price</th>
+                        <th>Variant</th>
+                        <th className="text-center">Price</th>
                         <th>Availability</th>
                         <th>Options</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {this.props.offerings.map(o => { return (<tr key={'offering-'+o.id}>
-                        <td>{o.title}</td>
-                        <td>{renderPrice(o)}</td>
-                        <td>To be provided</td>
-                        <td></td>
-                    </tr>); })}
+                    {this.props.offerings.map(o => this.renderOfferingRows(o))}
                 </tbody>
             </table>
 
@@ -62,6 +58,26 @@ class AdminOfferingsPage extends React.Component {
     goToHome() {
         const { history } = this.props;
         history.push('/');
+    }
+
+    renderOfferingRows(offering) {
+        if (offering?.variants?.length) {
+            return offering.variants.map(v => (<tr key={'offering-'+offering.id + '-' + v.id}>
+                    <td>{offering.title}</td>
+                    <td>{v.name}</td>
+                    <td className="text-center">{renderAmountAsHtml(v.suggestedPrice, offering.currency, false)}</td>
+                    <td>To be provided</td>
+                    <td></td>
+                </tr>));
+        } else {
+            return (<tr key={'offering-'+offering.id}>
+                    <td>{offering.title}</td>
+                    <td></td>
+                    <td className="text-center">{renderPrice(offering)}</td>
+                    <td>To be provided</td>
+                    <td></td>
+                </tr>);
+        }
     }
 }
 

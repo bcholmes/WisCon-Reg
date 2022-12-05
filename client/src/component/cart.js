@@ -35,7 +35,7 @@ class Cart extends Component {
                 let removeButton = this.props.edit ? (<button className="btn p-0" onClick={() => this.removeFromCart(e)}><i className="bi-trash text-danger"></i></button>) : undefined;
                 return (<li className="list-group-item d-flex justify-content-between lh-sm visible-on-hover pb-2" key={i}>
                     <div>
-                        <h6 className="my-0">{e.offering.title}</h6>
+                        <h6 className="my-0">{this.renderItemTitle(e)}</h6>
                         <small className="text-muted">{e.for}</small>
                     </div>
                     <div>
@@ -62,6 +62,20 @@ class Cart extends Component {
             </h5>
             {message}
         </div>);
+    }
+
+    renderItemTitle(item) {
+        if (item.values?.variantId != null) {
+            let title = item.offering?.title;
+            let variant = item.offering?.variants?.filter(v => v.id?.toString() === item.values?.variantId);
+            if (variant?.length) {
+                return title + " / " + variant[0].name;
+            } else {
+                return title;
+            }
+        } else {
+            return item.offering?.title;
+        }
     }
 
     removeFromCart(item) {

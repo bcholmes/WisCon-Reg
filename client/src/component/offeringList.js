@@ -13,9 +13,8 @@ import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
 import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
-import { sdlc } from '../util/sdlcUtil';
 import { isAdmin } from '../state/authActions';
-import { renderPrice } from '../state/offeringFunctions';
+import { renderAmountAsString, renderPrice } from '../state/offeringFunctions';
 
 class OfferingList extends Component {
 
@@ -118,7 +117,10 @@ class OfferingList extends Component {
             }
 
             let amountEntry = undefined;
-            if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null) {
+            if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null &&
+                (!this.isVariantSelectionRequired() ||
+                (this.isNonFixedPriceVariantPresent(this.state.selectedOffering) &&
+                !this.isFixedPriceVariantChosen(this.state.selectedOffering)))) {
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
                     <Form.Label className="sr-only">Amount</Form.Label>
                     <Form.Control className={this.getErrorClass('amount')} type="text" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue('amount', e.target.value)}/>
@@ -159,7 +161,7 @@ class OfferingList extends Component {
                         <Form.Label className="sr-only">Option</Form.Label>
                         <Form.Control className={this.getErrorClass('variantId')} as="select" value={this.getFormValue('variantId')} onChange={(e) => this.setFormValue("variantId", e.target.value)} key="variant">
                             <option></option>
-                            {this.state.selectedOffering.variants.map((v, i) => (<option value={v.id}>{v.name + (v.suggestedPrice ? ' - ' + formatAmount(v.suggestedPrice, this.state?.selectedOffering?.currency) : '')}</option>))}
+                            {this.state.selectedOffering.variants.map((v, i) => (<option value={v.id}>{v.name + (v.suggestedPrice != null ? ' - ' + renderAmountAsString(v.suggestedPrice, this.state?.selectedOffering?.currency) : '')}</option>))}
                         </Form.Control>
                         {this.selectedVariantDescription()}
                     </Form.Group>)
@@ -169,7 +171,7 @@ class OfferingList extends Component {
             <Form.Label className="sr-only">Age</Form.Label>
             <Form.Control className={this.getErrorClass('age')} type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
             <Form.Text className="text-muted">
-                Please tell us how old the child is as of Memorial Day 2022.
+                Please tell us how old the child is as of Memorial Day 2023.
             </Form.Text>
         </Form.Group>) : undefined;
 
@@ -563,8 +565,27 @@ class OfferingList extends Component {
     }
 
     isVariableAmount(offering) {
-        if (offering) {
+        if (offering?.variants?.length) {
+            return false; // we don't consider variants to be "variable", we might consider them "choose your own price"
+        } else if (offering) {
             return offering.minimumPrice;
+        } else {
+            return false;
+        }
+    }
+
+    isNonFixedPriceVariantPresent(offering) {
+        if (offering?.variants?.length) {
+            let variant = offering?.variants?.filter(v => v.suggestedPrice == null);
+            return variant?.length;
+        } else {
+            return false;
+        }
+    }
+    isFixedPriceVariantChosen(offering) {
+        if (offering?.variants?.length) {
+            let variant = this.findVariantById(this.state?.values?.variantId);
+            return variant?.suggestedPrice != null;
         } else {
             return false;
         }
@@ -593,6 +614,14 @@ class OfferingList extends Component {
         } else {
             errors[formName] = false;
         }
+
+        if (formName === 'variantId') {
+            let variant = this.findVariantById(formValue);
+            if (variant?.suggestedPrice != null) {
+                newValue["amount"] = '' + formatAmount(variant.suggestedPrice);
+            }
+        }
+
         this.setState({
             ...state,
             values: newValue,
@@ -600,6 +629,11 @@ class OfferingList extends Component {
             errors: errors
         });
 
+    }
+
+    findVariantById(variantIdAsString) {
+        let variant = this.state?.selectedOffering?.variants?.filter(v => v?.id?.toString() === variantIdAsString);
+        return variant?.length ? variant[0] : null;
     }
 
     toNumber(value) {
@@ -631,7 +665,7 @@ class OfferingList extends Component {
             message = "The amount value looks a bit fishy";
         } else if (value === '' || (value === 0 && offering.suggestedPrice == null)) {
             message = "Please provide an amount.";
-        } else if (this.isVariableAmount(offering) && value < offering.minimumPrice) {
+        } else if (this.isVariableAmount(offering) && offering.minimumPrice != null && value < offering?.minimumPrice) {
             message = "The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency);
         } else if (this.isVariableAmount(offering) && offering.maximumPrice != null && value > offering.maximumPrice) {
             message = "The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency);
@@ -751,7 +785,7 @@ class OfferingList extends Component {
         }
         let price = newValues.amount || 0;
         if (this.isValidForm()) {
-            axios.post(sdlc.serverUrl('/api/order_item.php'), {
+            axios.post('/api/order_item.php', {
                 "orderId": store.getState().cart.orderId,
                 "for": values.for,
                 "itemUUID": uuid,

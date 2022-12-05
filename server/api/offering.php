@@ -31,7 +31,8 @@ class Variant {
         return array("id" => $this->id,
             "name" => $this->name,
             "description" => $this->description,
-            "isDefault" => $this->isDefault
+            "isDefault" => $this->isDefault,
+            "suggestedPrice" => $this->suggestedPrice
         );
     }
 }
@@ -151,7 +152,7 @@ EOD;
         }
 
         $query = <<<EOD
-        SELECT v.id, v.sort_order, v.name, v.description, v.is_default, v.offering_id
+        SELECT v.id, v.sort_order, v.name, v.description, v.is_default, v.offering_id, v.suggested_price
         FROM reg_offering_variant v
         WHERE v.offering_id in (select o.id from reg_offering o where o.con_id = ?)
         ORDER BY v.offering_id, v.sort_order;
@@ -172,6 +173,7 @@ EOD;
                 $variant->name = $row->name;
                 $variant->description = $row->description;
                 $variant->isDefault = ("Y" == $row->is_default ? true : false);
+                $variant->suggestedPrice = $row->suggested_price == null ? null : (double) $row->suggested_price;
                 $temp[] = $variant;
 
                 $variants[$offeringId] = $temp;

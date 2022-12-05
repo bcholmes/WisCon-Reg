@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,17 +42,17 @@ function connect_to_db($db_ini) {
 
 function find_current_con_with_db($db) {
     $query = <<<EOD
-    SELECT 
+    SELECT
            c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date, c.reg_close_time
-      FROM 
+      FROM
            reg_con_info c, reg_perennial_con_info p
-     WHERE 
+     WHERE
            c.perennial_con_id = p.id AND
            c.active_from_time <= NOW() AND
            c.active_to_time >= NOW();
-   
+
     EOD;
-   
+
     $stmt = mysqli_prepare($db, $query);
     if (mysqli_stmt_execute($stmt)) {
         $result = mysqli_stmt_get_result($stmt);
@@ -70,19 +70,19 @@ function find_current_con_with_db($db) {
 
 function find_next_con($db) {
     $query = <<<EOD
-    SELECT 
+    SELECT
             c.id, c.name, p.name as perrenial_name, c.con_start_date, c.con_end_date
-      FROM 
+      FROM
             reg_con_info c, reg_perennial_con_info p
-     WHERE 
+     WHERE
             c.perennial_con_id = p.id AND
             c.active_from_time >= NOW()
      ORDER BY
             c.active_from_time
      LIMIT 1;
-   
+
     EOD;
-   
+
     $stmt = mysqli_prepare($db, $query);
     if (mysqli_stmt_execute($stmt)) {
         $result = mysqli_stmt_get_result($stmt);
@@ -100,11 +100,11 @@ function find_next_con($db) {
 
 function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
     $query = <<<EOD
- SELECT 
+ SELECT
         o.id, o.status, o.payment_intent_id, o.payment_method, o.confirmation_email, o.payment_date, o.finalized_date
-   FROM 
+   FROM
         reg_order o
-  WHERE 
+  WHERE
         o.order_uuid = ? AND
         o.con_id  = ?;
  EOD;
@@ -127,11 +127,11 @@ function find_order_by_order_uuid_with_db($db, $conData, $order_uuid) {
 
 function find_name_by_email_address($db, $conData, $email_address) {
     $query = <<<EOD
- SELECT 
+ SELECT
         distinct i.for_name as name, count(*)
-   FROM 
+   FROM
         reg_order o, reg_order_item i
-  WHERE 
+  WHERE
         o.id = i.order_id AND
         i.email_address = ? AND
         o.con_id  = ?
@@ -161,7 +161,7 @@ function create_order_with_order_uuid($db, $conData, $order_uuid) {
     $query = <<<EOD
  INSERT
         INTO reg_order (order_uuid, con_id)
- VALUES 
+ VALUES
         (?, ?);
  EOD;
 
@@ -276,16 +276,16 @@ function create_order_item_with_uuid($db, $conData, $orderId, $values, $offering
     try {
         $query = <<<EOD
  INSERT
-        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok, 
-        street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id)
- SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, o.id
+        INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok,
+        street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id, variant_id)
+ SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, o.id, ?
    from reg_offering o
  where  o.id = ?
    and  o.con_id = ?;
  EOD;
 
         $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "isssdssssssssssii", $orderId, $values->for, $values->email, $item_uuid, $values->amount, 
+        mysqli_stmt_bind_param($stmt, "isssdssssssssssiii", $orderId, $values->for, $values->email, $item_uuid, $values->amount,
             boolean_value_from($values->newsletter != null ? $values->newsletter : false),
             boolean_value_from($values->volunteer != null ? $values->volunteer : false),
             boolean_value_from($values->snailMail != null ? $values->snailMail : false),
@@ -296,6 +296,7 @@ function create_order_item_with_uuid($db, $conData, $orderId, $values, $offering
             $values->country,
             $values->zipOrPostalCode,
             $values->age,
+            $values->variantId,
             $offering->id, $conData->id);
 
         if ($stmt->execute()) {

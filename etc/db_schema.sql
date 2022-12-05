@@ -55,6 +55,7 @@ create table reg_offering_highlight (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table reg_offering_variant (
+    `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     offering_id INT NOT NULL,
     sort_order INT NOT NULL,
     name varchar(1024),
@@ -63,7 +64,6 @@ create table reg_offering_variant (
     minimum_price decimal(13,2),
     suggested_price decimal(13,2),
     maximum_price decimal(13,2),
-    PRIMARY KEY(offering_id, sort_order),
 
     FOREIGN KEY (offering_id)
         REFERENCES reg_offering(id)
@@ -531,14 +531,151 @@ select max(id),
 from reg_offering;
 
 insert into reg_offering_variant
-(offering_id, soft_order, name, description)
+(offering_id, sort_order, name, description)
 select max(id),
 1, 'SF3 General Fund', 'Donations to the general fund for SF3, WisCon''s parent organization'
 from reg_offering;
 
 insert into reg_offering_variant
-(offering_id, soft_order, name, description)
+(offering_id, sort_order, name, description)
 select max(id),
 2, 'WisCon Member Assistance Fund', 'Donations to the WisCon Member Assistance Fund, which supports anyone who needs financial assistance to attend the convention. To learn more, including about how to apply to the Member Assistance Fund yourself, visit https://wiscon.net/assistance-fund/ '
 from reg_offering;
 
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+3, 'Donate Membership to BIPOC Volunteer',
+'A gift in this amount is enough to cover a membership for a BIPOC pre-con volunteer',
+65.00
+from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, minimum_price, suggested_price, description, is_membership, add_prompts, email_required, is_donation)
+values
+(7, 'Dessert Ticket', 2, '2023-05-29 23:59:59', 20.00, 35.00,
+'Ticket for the Dessert Salon on Sunday evening of WisCon 2023, including two desserts from the buffet. (Proceeds from the Dessert Salon help to offset the costs of other aspects of the convention.)',
+'N', 'N', 'NO', 'Y');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Sunday Evening Dessert Salon'
+from reg_offering;
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Two desserts'
+from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, age_required)
+values
+(5, 'WisCon Child Care', 2, '2023-05-29 23:59:59', 1.00,
+'Child Membership (Ages 6mo to 6yr) for WisCon 2023. Includes on-site child care during the day, on each day of the convention (check wiscon.net for details and hours).',
+'Y', 'N', 'NO', 'Y');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'On-site daytime child care (Thu-Mon)'
+from reg_offering;
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Ages 6mo to 6yr'
+from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, address_required)
+values
+(6, 'Supporting Membership', 2, '2023-05-29 23:59:59', 20.00,
+'A non-attending membership for the convention. Supporting Members will receive any announcements and mailings sent to the general membership, as well as a physical copy of our program and souvenir book (requires a mailing address).',
+'Y', 'N', 'NO', 'Y');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'A non-attending membership'
+from reg_offering;
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+2, 'Receive printed materials, by mail'
+from reg_offering;
+
+alter table reg_order_item add column variant_id int(11);
+
+alter table reg_order_item add FOREIGN KEY (variant_id)
+        REFERENCES reg_offering_variant(id)
+        ON UPDATE RESTRICT ON DELETE restrict;
+
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, description, is_membership, add_prompts, emphasis, email_required)
+values
+(2, 'In-Person Membership', 2, '2023-05-29 23:59:59',
+'Our standard membership for guests.',
+'Y', 'Y', 'Y', 'REQUIRED');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Full Weekend (Thu-Mon)'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price, is_default)
+select max(id),
+1, 'Adult (19+)',
+'Our standard membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+65.00, 'Y'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+2, 'Teen/Youth (7-18)',
+'Our weekend membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+25.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+3, 'Former GoH',
+'Available only to previous Guests of Honor.',
+0
+from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, description, is_membership, add_prompts, emphasis, email_required)
+values
+(2, 'Online Membership', 2, '2023-05-29 23:59:59',
+'The Online Membership provides access to the online portion of WisCon 2022 (visit https://wiscon.net/register/ for more information)',
+'Y', 'Y', 'N', 'REQUIRED');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'Access to all online programming and events'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price, is_default)
+select max(id),
+1, 'Adult (19+)',
+'Our standard membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+25.00, 'Y'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+2, 'Teen/Youth (7-18)',
+'Our weekend membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+25.00
+from reg_offering;
