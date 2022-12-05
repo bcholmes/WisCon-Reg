@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import Footer from '../component/footer';
 import PageHeader from '../component/pageHeader';
-import { renderAmountAsHtml, renderAmountAsString, renderPrice } from '../state/offeringFunctions';
+import { renderAmountAsHtml, renderPrice } from '../state/offeringFunctions';
 import { isAuthenticated } from '../util/jwtUtil';
 
 import dayjs from "dayjs";
