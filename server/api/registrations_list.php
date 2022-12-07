@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,7 @@ function filter_clause($db, $term) {
     if ($term) {
         $id_clause = (is_numeric($term)) ? (" or o.id = " . $term) : "";
         $termPhrase = '%' . mysqli_real_escape_string($db, strtolower($term)) . '%';
-        $filterQuery = "and (i.for_name like '" . $termPhrase . "' OR i.email_address like '" . $termPhrase 
+        $filterQuery = "and (i.for_name like '" . $termPhrase . "' OR i.email_address like '" . $termPhrase
             . "' or o.confirmation_email like '" . $termPhrase . "'" . $id_clause . ")";
     }
     return $filterQuery;
@@ -38,17 +38,20 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
     $start = $page * $pageSize;
 
     $query = <<<EOD
-    SELECT 
-            o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name, 
-            i.email_address, i.amount, off.title, i.status as item_status, o.con_id
-    FROM 
+    SELECT
+            o.id, o.confirmation_email, o.status, o.order_uuid, o.payment_method, o.finalized_date, i.for_name,
+            i.email_address, i.amount, off.title, i.status as item_status, o.con_id, v.name
+    FROM
             reg_order o
     LEFT OUTER JOIN reg_order_item i
             ON
                 o.id = i.order_id
     LEFT OUTER JOIN reg_offering off
-            ON 
+            ON
                 i.offering_id = off.id
+    LEFT OUTER JOIN reg_offering_variant v
+            ON
+                i.variant_id = v.id
     WHERE (o.con_id  = ? or off.con_id = ?)
         AND o.status != 'IN_PROGRESS'
         $filterQuery
@@ -65,11 +68,11 @@ function find_registrations($conData, $db, $term, $page, $pageSize) {
         $result = mysqli_stmt_get_result($stmt);
         while ($row = mysqli_fetch_object($result)) {
             $current = array(
-                "id" => $row->id, 
+                "id" => $row->id,
                 "confirmation_mail" => $row->confirmation_email,
                 "orderUuid" => $row->order_uuid,
                 "key" => create_order_key($row->id, $row->order_uuid, $row->confirmation_email),
-                "title" => $row->title,
+                "title" => $row->title . ($row->name == null ? "" : (" / " . $row->name)),
                 "status" => $row->status,
                 "paid" => ($row->status == 'PAID' ? "\"Yes\"" : "\"No\""),
                 "amount" => $row->amount,
@@ -104,15 +107,15 @@ function count_registrations($conData, $db, $term) {
     $filterQuery = filter_clause($db, $term);
 
     $query = <<<EOD
-    SELECT 
+    SELECT
             count(*) as row_count
-    FROM 
+    FROM
             reg_order o
     LEFT OUTER JOIN reg_order_item i
             ON
                 o.id = i.order_id
     LEFT OUTER JOIN reg_offering off
-            ON 
+            ON
                 i.offering_id = off.id
     WHERE (o.con_id  = ? or off.con_id = ?)
       AND o.status != 'IN_PROGRESS'
@@ -177,7 +180,7 @@ try {
         if ($term) {
             $baseUrl = $baseUrl . 'term=' . urlencode($term) . '&';
         }
-        $result = array( "items" => $items, 
+        $result = array( "items" => $items,
             "pagination" => array(
                 "start" => (count($items) > 0 ? 1 + ($page * $PAGE_SIZE) : 0),
                 "end" => count($items) + ($page * $PAGE_SIZE),

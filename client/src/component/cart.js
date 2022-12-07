@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { connect } from "react-redux";
 import axios from 'axios';
 
 import Spinner from 'react-bootstrap/Spinner';
@@ -13,29 +14,15 @@ class Cart extends Component {
         super(props);
 
         this.state = {
-            cart: store.getState().cart.items,
             loading: null
-        }
-
-        this.unsubscribe = store.subscribe(() => {
-            this.setState({
-                cart: store.getState().cart.items,
-                loading: null
-            });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribe) {
-            this.unsubscribe();
         }
     }
 
     render() {
-        let count = this.state.cart.length;
+        let count = this.props.cart.length;
         let total = 0;
         let currency = undefined;
-        let itemList = this.state.cart.map((e, i) => {
+        let itemList = this.props.cart.map((e, i) => {
             if (this.state.loading === e.itemUUID) {
                 return (<li className="list-group-item d-flex justify-content-between lh-sm text-center pb-2" key={i}>
                     <div className="text-center w-100">
@@ -48,7 +35,7 @@ class Cart extends Component {
                 let removeButton = this.props.edit ? (<button className="btn p-0" onClick={() => this.removeFromCart(e)}><i className="bi-trash text-danger"></i></button>) : undefined;
                 return (<li className="list-group-item d-flex justify-content-between lh-sm visible-on-hover pb-2" key={i}>
                     <div>
-                        <h6 className="my-0">{e.offering.title}</h6>
+                        <h6 className="my-0">{this.renderItemTitle(e)}</h6>
                         <small className="text-muted">{e.for}</small>
                     </div>
                     <div>
@@ -58,12 +45,12 @@ class Cart extends Component {
                 </li>);
             }
         });
-        let message = count <= 0 
-            ? (<div className="text-muted mb-3">You have no items in your cart.</div>) 
+        let message = count <= 0
+            ? (<div className="text-muted mb-3">You have no items in your cart.</div>)
             : (<ul className="list-group mb-3">
                 {itemList}
                 <li className="list-group-item d-flex justify-content-between lh-sm" key="total">
-                    <h6 className="my-0">Total (USD)</h6>
+                    <h6 className="my-0">{'Total (' + currency + ')'}</h6>
                     <strong>{formatAmount(total, currency)}</strong>
                 </li>
             </ul>);
@@ -75,6 +62,20 @@ class Cart extends Component {
             </h5>
             {message}
         </div>);
+    }
+
+    renderItemTitle(item) {
+        if (item.values?.variantId != null) {
+            let title = item.offering?.title;
+            let variant = item.offering?.variants?.filter(v => v.id?.toString() === item.values?.variantId);
+            if (variant?.length) {
+                return title + " / " + variant[0].name;
+            } else {
+                return title;
+            }
+        } else {
+            return item.offering?.title;
+        }
     }
 
     removeFromCart(item) {
@@ -100,4 +101,10 @@ class Cart extends Component {
     }
 }
 
-export default Cart;
+function mapStateToProps(state, ownProps) {
+    return {
+        cart: state.cart.items
+    };
+}
+
+export default connect(mapStateToProps)(Cart);

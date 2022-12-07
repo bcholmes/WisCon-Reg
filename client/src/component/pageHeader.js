@@ -52,11 +52,12 @@ class PageHeader extends Component {
         }
 
         let message = (this.state.login.message) ? (<div className="alert alert-danger">{this.state.login.message}</div>) : undefined;
-        let adminMenu = this.isAuthenticated() 
+        let adminMenu = this.isAuthenticated()
             ? (<NavDropdown title={this.getAdminName()} id="admin-nav-dropdown">
                     <NavDropdown.Item onClick={() => this.goToRegistrationList()}>Registrations</NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => this.goToOfferingsList()}>Offerings</NavDropdown.Item>
                     <NavDropdown.Item onClick={() => this.logoutAdmin()}>Logout</NavDropdown.Item>
-                </NavDropdown>) 
+                </NavDropdown>)
             : (<Nav.Link onClick={() => {
                 this.showLoginModal()
             }}>Admin</Nav.Link>);
@@ -138,6 +139,11 @@ class PageHeader extends Component {
         history.push('/admin');
     }
 
+    goToOfferingsList() {
+        const { history } = this.props;
+        history.push('/admin/offerings');
+    }
+
     setUserid(userid) {
         let state = this.state;
         let enabled = state.login.loginEnabled;
@@ -179,7 +185,7 @@ class PageHeader extends Component {
     handleClose() {
         let state = this.state;
         this.setState({
-            ...state, 
+            ...state,
             login: {
                 showModal: false
             }
@@ -189,7 +195,7 @@ class PageHeader extends Component {
     showLoginModal() {
         let state = this.state;
         this.setState({
-            ...state, 
+            ...state,
             login: {
                 showModal: true
             }

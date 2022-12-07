@@ -1,10 +1,9 @@
 import { createStore, combineReducers } from 'redux'
 import { ADD_AUTH_CREDENTIAL, LOGOUT, LOGOUT_WITH_MESSAGE } from './authActions';
-import { ADD_STRIPE_SECRET, ADD_TO_CART, CLEAR_CART, REMOVE_FROM_CART } from './cartActions';
 import { SET_OFFERINGS } from './offeringActions';
 import { ADD_MESSAGE, REMOVE_MESSAGE } from './pageMessageActions';
-import { v4 as uuidv4 } from 'uuid';
 import { con } from './conReducer';
+import { cart } from './cartReducer';
 
 const offeringInitialState = {
     loading: true,
@@ -12,7 +11,7 @@ const offeringInitialState = {
     items: []
 }
 
-const cartInitialState = createInitialCart();
+
 
 const authInitialState = {
     jwt: undefined
@@ -22,17 +21,9 @@ const pageMessageInitialState = {
     messages: []
 }
 
-
-function createInitialCart() {
-    return {
-        orderId: uuidv4(),
-        items: []
-    };
-}
-
 const pageMessage = (state = pageMessageInitialState, action) => {
     switch (action.type) {
-        case ADD_MESSAGE: 
+        case ADD_MESSAGE:
         case LOGOUT_WITH_MESSAGE:
             return {
                 ...state,
@@ -41,7 +32,7 @@ const pageMessage = (state = pageMessageInitialState, action) => {
                     action.payload
                 ]
             }
-        case REMOVE_MESSAGE: 
+        case REMOVE_MESSAGE:
             return {
                 ...state,
                 messages: state.messages.filter(m => m && m.text !== action.payload.text && m.severity !== action.payload.severity && m.category !== action.payload.category)
@@ -53,7 +44,7 @@ const pageMessage = (state = pageMessageInitialState, action) => {
 
 const offerings = (state = offeringInitialState, action) => {
     switch (action.type) {
-        case SET_OFFERINGS: 
+        case SET_OFFERINGS:
             return {
                 ...state,
                 loading: false,
@@ -66,44 +57,15 @@ const offerings = (state = offeringInitialState, action) => {
     }
 };
 
-const cart = (state = cartInitialState, action) => {
-    switch (action.type) {
-        case ADD_TO_CART: 
-            return {
-                ...state,
-                items: [
-                    ...state.items,
-                    action.payload
-                ]
-            }
-        case REMOVE_FROM_CART: {
-            let item = action.payload;
-            let newItemList = state.items.filter(e => e.itemUUID !== item.itemUUID);
-            return {
-                ...state,
-                items: newItemList
-            }
-            }
-        case ADD_STRIPE_SECRET:
-            return {
-                ...state,
-                clientSecret: action.payload
-            };
-        case CLEAR_CART:
-            return createInitialCart();
-        default:
-            return state;
-    }
-};
 
 const auth = (state = authInitialState, action) => {
     switch (action.type) {
-        case ADD_AUTH_CREDENTIAL: 
+        case ADD_AUTH_CREDENTIAL:
             return {
                 jwt: action.payload.jwt
             }
-        case LOGOUT: 
-        case LOGOUT_WITH_MESSAGE: 
+        case LOGOUT:
+        case LOGOUT_WITH_MESSAGE:
             return {
                 jwt: undefined
             };
@@ -114,9 +76,9 @@ const auth = (state = authInitialState, action) => {
 
 const reducer = combineReducers({
     offerings,
-    cart,
     auth,
     pageMessage,
+    cart: cart,
     con: con
 })
 const store = createStore(reducer);

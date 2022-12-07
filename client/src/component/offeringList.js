@@ -13,8 +13,8 @@ import store from '../state/store';
 import { fetchOfferings } from '../state/offeringActions';
 import { isValidEmail } from '../util/emailUtil';
 import { formatAmount } from '../util/numberUtil';
-import { sdlc } from '../util/sdlcUtil';
 import { isAdmin } from '../state/authActions';
+import { renderAmountAsString, renderPrice } from '../state/offeringFunctions';
 
 class OfferingList extends Component {
 
@@ -49,8 +49,6 @@ class OfferingList extends Component {
                 let highlights = o.highlights.map((h, i) => {
                     return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
                 })
-                let price = o.suggestedPrice === undefined || o.suggestedPrice === null ? 'Any' : (o.suggestedPrice ===  0 ? 'Free' : ('$' + o.suggestedPrice.toFixed(0)));
-                let priceSuffix = this.isVariableAmount(o) ? (<small className="text-muted">+/-</small>) : undefined;
 
                 if (o.remaining != null && o.remaining <= 0) {
                     return undefined;
@@ -64,7 +62,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
+                                <h1 className="card-title pricing-card-title">{renderPrice(o)}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {this.supplyNotes(o)}
                                 {highlights}
@@ -82,7 +80,7 @@ class OfferingList extends Component {
                                 <h5 className="my-0 fw-normal">{o.title}</h5>
                             </div>
                             <div className="card-body">
-                                <h1 className="card-title pricing-card-title"><small className="text-muted fw-light"><small>{o.currency}</small></small> {price } {priceSuffix}</h1>
+                                <h1 className="card-title pricing-card-title">{renderPrice(o)}</h1>
                                 <ul className="list-unstyled mt-3 mb-4">
                                 {this.supplyNotes(o)}
                                 {highlights}
@@ -108,8 +106,8 @@ class OfferingList extends Component {
                 <Form.Label className="sr-only">{emailLabel}</Form.Label>
                 <Form.Control className={this.getErrorClass('email')} type="email" placeholder={emailLabel} onChange={(e) => this.setFormValue("email", e.target.value)}/>
                 <Form.Text className="text-muted">
-                    Provide a current email address to which information about this membership and the upcoming WisCon convention can be 
-                    sent. This email will not be used or shared for any other purpose without your consent. (If you are also 
+                    Provide a current email address to which information about this membership and the upcoming WisCon convention can be
+                    sent. This email will not be used or shared for any other purpose without your consent. (If you are also
                     signing up for WisCon programming, please provide the same email address here so that we can match your profiles.)
                 </Form.Text>
             </Form.Group>);
@@ -119,7 +117,10 @@ class OfferingList extends Component {
             }
 
             let amountEntry = undefined;
-            if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null) {
+            if (this.state.selectedOffering && this.state.selectedOffering.suggestedPrice == null &&
+                (!this.isVariantSelectionRequired() ||
+                (this.isNonFixedPriceVariantPresent(this.state.selectedOffering) &&
+                !this.isFixedPriceVariantChosen(this.state.selectedOffering)))) {
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
                     <Form.Label className="sr-only">Amount</Form.Label>
                     <Form.Control className={this.getErrorClass('amount')} type="text" placeholder="Amount... (e.g. 30)" value={this.getFormValue('amount')} onChange={(e) => this.setFormValue('amount', e.target.value)}/>
@@ -128,7 +129,7 @@ class OfferingList extends Component {
                     </Form.Text>
                 </Form.Group>);
             } else if (this.isVariableAmount(this.state.selectedOffering)) {
-                let guidance = (this.state.selectedOffering.maximumPrice != null) 
+                let guidance = (this.state.selectedOffering.maximumPrice != null)
                     ? ' Please choose an amount between ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + ' and ' + formatAmount(this.state.selectedOffering.maximumPrice, this.state.selectedOffering.currency) + '.'
                     : ' Please choose an amount greater than or equal to ' + formatAmount(this.state.selectedOffering.minimumPrice, this.state.selectedOffering.currency) + '.';
                 amountEntry = (<Form.Group className="mb-3" controlId="amount">
@@ -141,7 +142,7 @@ class OfferingList extends Component {
                 </Form.Group>);
             }
 
-            let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts) 
+            let questions = (this.state.selectedOffering && this.state.selectedOffering.addPrompts)
                 ? [
                     <Form.Check className="mb-3" id="volunteer" key="form-volunteer" onClick={(e) => this.setFormValue('volunteer', e.target.checked)}
                             label="WisCon is entirely run by volunteers. Would you like to receive information about volunteering during the upcoming WisCon convention, or about getting involved in pre-convention organizing?" />,
@@ -155,15 +156,26 @@ class OfferingList extends Component {
                 ]
                 : undefined;
 
+            let variantOption = this.isVariantSelectionRequired()
+                ? (<Form.Group className="mb-3" controlId="formVariant">
+                        <Form.Label className="sr-only">Option</Form.Label>
+                        <Form.Control className={this.getErrorClass('variantId')} as="select" value={this.getFormValue('variantId')} onChange={(e) => this.setFormValue("variantId", e.target.value)} key="variant">
+                            <option></option>
+                            {this.state.selectedOffering.variants.map((v, i) => (<option value={v.id}>{v.name + (v.suggestedPrice != null ? ' - ' + renderAmountAsString(v.suggestedPrice, this.state?.selectedOffering?.currency) : '')}</option>))}
+                        </Form.Control>
+                        {this.selectedVariantDescription()}
+                    </Form.Group>)
+                : null;
+
             let ageField = (this.isAgeRequired()) ? (<Form.Group className="mb-3" controlId="age">
             <Form.Label className="sr-only">Age</Form.Label>
             <Form.Control className={this.getErrorClass('age')} type="text" placeholder="Age (e.g. 18 months)" value={this.getFormValue('age')} onChange={(e) => this.setFormValue("age", e.target.value)}/>
             <Form.Text className="text-muted">
-                Please tell us how old the child is as of Memorial Day 2022.
+                Please tell us how old the child is as of Memorial Day 2023.
             </Form.Text>
         </Form.Group>) : undefined;
 
-            let addressFields = (this.isAddressRequired()) 
+            let addressFields = (this.isAddressRequired())
                 ? [
                     <Form.Group controlId="streetLine1" key="streetLine1">
                         <Form.Label className="sr-only">Street Line 1</Form.Label>
@@ -447,7 +459,7 @@ class OfferingList extends Component {
                         <option>Zambia</option>
                         <option>Zimbabwe</option>
                     </Form.Control>
-            ] 
+            ]
                 : undefined;
 
             return (
@@ -464,12 +476,13 @@ class OfferingList extends Component {
                             <Modal.Body>
                                 {message}
                                 {description}
+                                {variantOption}
                                 <Form.Group className="mb-3" controlId="formName">
                                     <Form.Label className="sr-only">Name</Form.Label>
                                     <Form.Control className={this.getErrorClass('for')} type="text" placeholder="Name" value={this.getFormValue('for')} onChange={(e) => this.setFormValue("for", e.target.value)}/>
                                     <Form.Text className="text-muted">
-                                    Please provide the full name of the person associated with this membership/item. This does not need to 
-                                    be a wallet name. By default this name will appear on your badge, but you can change your badge name 
+                                    Please provide the full name of the person associated with this membership/item. This does not need to
+                                    be a wallet name. By default this name will appear on your badge, but you can change your badge name
                                     by logging in at program.wiscon.net.
                                     </Form.Text>
 
@@ -490,6 +503,25 @@ class OfferingList extends Component {
                     </Modal>
                 </div>
             );
+        }
+    }
+
+    selectedVariantDescription() {
+        if (this.state?.values?.variantId != null) {
+            let variants = this.state?.selectedOffering?.variants?.filter(v => v?.id?.toString() === this.state?.values?.variantId);
+            if (variants?.length) {
+                return (<Form.Text className="text-muted">
+                        {variants[0].description}
+                    </Form.Text>)
+            } else {
+                return (<Form.Text className="text-muted">
+                        Please choose an option
+                    </Form.Text>);
+            }
+        } else {
+            return (<Form.Text className="text-muted">
+                Please choose an option
+            </Form.Text>);
         }
     }
 
@@ -533,8 +565,27 @@ class OfferingList extends Component {
     }
 
     isVariableAmount(offering) {
-        if (offering) {
+        if (offering?.variants?.length) {
+            return false; // we don't consider variants to be "variable", we might consider them "choose your own price"
+        } else if (offering) {
             return offering.minimumPrice;
+        } else {
+            return false;
+        }
+    }
+
+    isNonFixedPriceVariantPresent(offering) {
+        if (offering?.variants?.length) {
+            let variant = offering?.variants?.filter(v => v.suggestedPrice == null);
+            return variant?.length;
+        } else {
+            return false;
+        }
+    }
+    isFixedPriceVariantChosen(offering) {
+        if (offering?.variants?.length) {
+            let variant = this.findVariantById(this.state?.values?.variantId);
+            return variant?.suggestedPrice != null;
         } else {
             return false;
         }
@@ -563,6 +614,14 @@ class OfferingList extends Component {
         } else {
             errors[formName] = false;
         }
+
+        if (formName === 'variantId') {
+            let variant = this.findVariantById(formValue);
+            if (variant?.suggestedPrice != null) {
+                newValue["amount"] = '' + formatAmount(variant.suggestedPrice);
+            }
+        }
+
         this.setState({
             ...state,
             values: newValue,
@@ -570,6 +629,11 @@ class OfferingList extends Component {
             errors: errors
         });
 
+    }
+
+    findVariantById(variantIdAsString) {
+        let variant = this.state?.selectedOffering?.variants?.filter(v => v?.id?.toString() === variantIdAsString);
+        return variant?.length ? variant[0] : null;
     }
 
     toNumber(value) {
@@ -601,7 +665,7 @@ class OfferingList extends Component {
             message = "The amount value looks a bit fishy";
         } else if (value === '' || (value === 0 && offering.suggestedPrice == null)) {
             message = "Please provide an amount.";
-        } else if (this.isVariableAmount(offering) && value < offering.minimumPrice) {
+        } else if (this.isVariableAmount(offering) && offering.minimumPrice != null && value < offering?.minimumPrice) {
             message = "The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency);
         } else if (this.isVariableAmount(offering) && offering.maximumPrice != null && value > offering.maximumPrice) {
             message = "The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency);
@@ -645,6 +709,13 @@ class OfferingList extends Component {
             }
         }
 
+        if (this.isVariantSelectionRequired()) {
+            if (!values.variantId) {
+                errors['variantId'] = true;
+                messages.push("Please choose an option from this list");
+            }
+        }
+
         if (this.isAddressRequired()) {
             if (!values.streetLine1) {
                 errors['streetLine1'] = true;
@@ -674,6 +745,10 @@ class OfferingList extends Component {
         } else {
             return true;
         }
+    }
+
+    isVariantSelectionRequired() {
+        return this.state?.selectedOffering?.variants != null && this.state?.selectedOffering?.variants?.length > 0;
     }
 
     showModal(offering) {
@@ -710,7 +785,7 @@ class OfferingList extends Component {
         }
         let price = newValues.amount || 0;
         if (this.isValidForm()) {
-            axios.post(sdlc.serverUrl('/api/order_item.php'), {
+            axios.post('/api/order_item.php', {
                 "orderId": store.getState().cart.orderId,
                 "for": values.for,
                 "itemUUID": uuid,
