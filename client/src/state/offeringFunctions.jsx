@@ -62,9 +62,19 @@ const getDefaultVariant = (offering) => {
 
 const isVariableAmount = (offering) => {
     if (isVariantsPresent(offering)) {
-        return isDefaultVariantPresent(offering);
+        return isDefaultVariantPresent(offering) && isDifferentVariantAmountsPresent(offering);
     } else if (offering) {
         return offering.minimumPrice;
+    } else {
+        return false;
+    }
+}
+
+const isDifferentVariantAmountsPresent = (offering) => {
+    if (offering?.variants?.length > 0) {
+        let amount = offering.variants[0].suggestedPrice;
+        let otherAmounts = offering.variants.filter(v => v.suggestedPrice !== amount);
+        return otherAmounts.length > 0;
     } else {
         return false;
     }
