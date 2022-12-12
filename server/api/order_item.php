@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,64 +14,9 @@
 // limitations under the License.
 
 require_once("config.php");
+require_once("con_info.php");
+require_once("offering.php");
 require_once("db_common_functions.php");
-
-
-function count_availability($db, $conData, $offering) {
-    $query = <<<EOD
-    SELECT quantity_pool_id
-    FROM reg_offering
-    WHERE id = ?
-    AND con_id = ?;
-EOD;
-
-    $stmt = mysqli_prepare($db, $query);
-    mysqli_stmt_bind_param($stmt, "ii", $offering->id, $conData->id);
-    mysqli_set_charset($db, "utf8");
-    $pool_id = null;
-    if (mysqli_stmt_execute($stmt)) {
-        $result = mysqli_stmt_get_result($stmt);
-
-        while ($row = mysqli_fetch_object($result)) {
-            $pool_id = $row->quantity_pool_id;
-        }
-        mysqli_stmt_close($stmt);
-    } else {
-        throw new DatabaseSqlException("Could not execute query: $query");
-    }
-
-    if ($pool_id) {
-        $query = <<<EOD
-        SELECT count(i.id) as current_count, p.quantity, p.id as pool_id
-        FROM reg_order_item i, reg_order ord, reg_offering of, reg_quantity_pool p 
-        WHERE i.offering_id = of.id 
-        AND i.order_id = ord.id
-        AND (ord.status in ('PAID', 'CHECKED_OUT') or (ord.status = 'IN_PROGRESS' and timestampdiff(SECOND, ord.last_modified_date, now()) < 600))
-        AND of.quantity_pool_id = p.id 
-        AND ord.con_id = ?
-        AND of.quantity_pool_id = ?
-        GROUP BY p.id, p.quantity;
-EOD;
-
-        $stmt = mysqli_prepare($db, $query);
-        mysqli_stmt_bind_param($stmt, "ii", $conData->id, $pool_id);
-        mysqli_set_charset($db, "utf8");
-        $available = 0;
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-
-            while ($row = mysqli_fetch_object($result)) {
-                $available = $row->quantity - $row->current_count;
-            }
-            mysqli_stmt_close($stmt);
-            return $available;
-        } else {
-            throw new DatabaseSqlException("Could not execute query: $query");
-        }
-    } else {
-        return 999999;
-    }
-}
 
 $ini = read_ini();
 $db = connect_to_db($ini);
@@ -93,9 +38,11 @@ try {
                 if ($order == null) {
                     $order = create_order_with_order_uuid($db, $conData, $order_uuid);
                 }
-                
-                $available = count_availability($db, $conData, $data->offering);
-                if ($available >= 1) {
+
+                $con = ConInfo::findCurrentCon($db);
+                $offering = Offering::findByConAndId($db, $con, $data->offering->id);
+
+                if ($offering != null && $offering->hasRemainingQuantity()) {
                     create_order_item_with_uuid($db, $conData, $order->id, $data->values, $data->offering, $data->itemUUID);
                     http_response_code(201);
                 } else {

@@ -39,6 +39,7 @@ class Variant {
 
 class Offering {
 
+    public $id;
     public $title;
     public $highlights;
     public $currency;
@@ -57,19 +58,51 @@ class Offering {
     public $quantityPoolId;
     public $relatedOfferingId;
     public $variants;
+    public $quantity;
+    public $purchaseCount;
+
+    function hasRemainingQuantity() {
+        if ($this->quantityPoolId === null || $this->quantity === null) {
+            return true;
+        } else {
+            return $this->getRemainingQuantity() > 0;
+        }
+    }
+
+    function getRemainingQuantity() {
+        if ($this->quantityPoolId != null && $this->quantity != null) {
+            return $this->quantity - ($this->purchaseCount ? $this->purchaseCount : 0);
+        } else {
+            return 99999;
+        }
+    }
+
+    static function findByConAndId($db, $conData, $id) {
+        $all = Offering::findAllByCon($db, $conData);
+
+        foreach ($all as $a) {
+            if ($a->id === $id) {
+                return $a;
+            }
+        }
+        return null;
+    }
 
     static function findAllByCon($db, $conData) {
         $query = <<<EOD
      SELECT
             o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
             o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required,
-            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id
+            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id, p.quantity
        FROM
             reg_offering o
       LEFT OUTER JOIN reg_offering_highlight h
          ON
             o.id = h.offering_id
-      WHERE
+    LEFT OUTER JOIN reg_quantity_pool p
+        ON
+            p.id = o.quantity_pool_id
+         WHERE
             o.start_time <= NOW()
         AND
             o.end_time >= NOW()
@@ -111,6 +144,7 @@ EOD;
                     $item->isRestricted = ("Y" == $row->restricted_access ? true : false);
                     $item->quantityPoolId = $row->quantity_pool_id;
                     $item->relatedOfferingId = $row->related_offering_id;
+                    $item->quantity = $row->quantity;
                 }
                 if ($row->highlight_text) {
                     $highlight_list = $item->highlights;
@@ -144,7 +178,7 @@ EOD;
             $result = mysqli_stmt_get_result($stmt);
 
             while ($row = mysqli_fetch_object($result)) {
-                $quantities[$row->pool_id] = $row->quantity - $row->current_count;
+                $quantities[$row->pool_id] = $row->current_count;
             }
             mysqli_stmt_close($stmt);
         } else {
@@ -185,7 +219,7 @@ EOD;
 
         foreach ($items as &$item) {
             if ($item->quantityPoolId && array_key_exists($item->quantityPoolId, $quantities)) {
-                $item->remaining = $quantities[$item->quantityPoolId];
+                $item->purchaseCount = $quantities[$item->quantityPoolId];
             }
             $item->variants = array_key_exists($item->id, $variants) ? $variants[$item->id] : array();
         }
@@ -211,9 +245,13 @@ EOD;
             "ageRequired" => $this->ageRequired,
             "isDonation" => $this->isDonation,
             "isRestricted" => $this->isRestricted,
-            "quantityPoolId" => $this->quantityPoolId,
             "relatedOfferingId" => $this->relatedOfferingId
         );
+
+        if ($this->quantityPoolId) {
+            $result["quantityPoolId"] = $this->quantityPoolId;
+            $result["remaining"] = $this->getRemainingQuantity();
+        }
 
         if ($this->variants != null) {
             $temp = array();
