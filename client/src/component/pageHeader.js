@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import toast from 'react-hot-toast';
 import {connect} from 'react-redux';
 import axios from 'axios';
 
@@ -211,6 +212,7 @@ class PageHeader extends Component {
             let jwt = this.extractJwt(res);
             if (jwt) {
                 store.dispatch(addAuthCredential(jwt));
+                toast("You have successfully logged in.", { className: "bg-success text-white" });
             }
             this.handleClose();
             this.goToRegistrationList();

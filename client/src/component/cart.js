@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
+import toast from 'react-hot-toast';
 import { connect } from "react-redux";
 import axios from 'axios';
 
 import Spinner from 'react-bootstrap/Spinner';
 import store from '../state/store'
 import { removeFromCart } from '../state/cartActions';
-import { addMessage } from '../state/pageMessageActions';
 import { formatAmount } from '../util/numberUtil';
 
 class Cart extends Component {
@@ -84,7 +84,7 @@ class Cart extends Component {
             loading: item.itemUUID
         });
 
-        axios.post('/api/remove_item.php', {
+        axios.post('/api/remove_itemxxx.php', {
             "orderId": store.getState().cart.orderId,
             "itemId": item.itemUUID
         })
@@ -92,7 +92,7 @@ class Cart extends Component {
                 store.dispatch(removeFromCart(item) );
             })
         .catch(error => {
-                store.dispatch(addMessage({severity: "danger", text: "There was a problem talking to the server.", category: "http" }));
+                toast("There was a problem talking to the server.", { className: "bg-danger text-white" });
                 this.setState({
                     ...this.state,
                     loading: null

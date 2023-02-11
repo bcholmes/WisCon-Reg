@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,9 +15,9 @@
 //
 // This function provides support for login.
 
-require_once("config.php");
-require_once("db_common_functions.php");
-require_once("jwt_functions.php");
+require_once(__DIR__ . "/config.php");
+require_once(__DIR__ . "/db_common_functions.php");
+require_once(__DIR__ . "/jwt_functions.php");
 
 function get_name($dbobject) {
     if (isset($dbobject->badgename) && $dbobject->badgename !== '') {
@@ -29,11 +29,11 @@ function get_name($dbobject) {
 
 function get_permission_roles($db, $badgeid) {
     $query = <<<EOD
- SELECT 
+ SELECT
         role_name
-   FROM 
-        reg_user_roles 
-  WHERE 
+   FROM
+        reg_user_roles
+  WHERE
          badgeid = ?;
  EOD;
 
@@ -54,11 +54,11 @@ function get_permission_roles($db, $badgeid) {
 
 function resolve_login($db, $ini, $userid, $password) {
     $query = <<<EOD
- SELECT 
-        password, badgeid, firstname, lastname, badgename 
-   FROM 
-        reg_users 
-  WHERE 
+ SELECT
+        password, badgeid, firstname, lastname, badgename
+   FROM
+        reg_users
+  WHERE
          email = ?;
  EOD;
 
@@ -109,7 +109,7 @@ try {
                 header("Authorization: Bearer ".$loginResult);
                 $result = array( "success" => true, "message" => "I like you. I really like you." );
                 echo json_encode($result);
-                    
+
             } else {
                 $result = array( "success" => false, "message" => "You're not of the body!" );
                 http_response_code(401);

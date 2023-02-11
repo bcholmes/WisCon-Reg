@@ -16,7 +16,8 @@
 // This function creates an object representation of offerings and also
 // handles reading/writing offerings from the database.
 
-require_once("db_common_functions.php");
+require_once(__DIR__ . "/db_common_functions.php");
+require_once(__DIR__ . "/format_functions.php");
 
 class Variant {
     public $id;

@@ -15,11 +15,11 @@
 //
 // This function provides support for the initial offering list.
 
-require_once("config.php");
-require_once("con_info.php");
-require_once("offering.php");
-require_once("db_common_functions.php");
-require_once("format_functions.php");
+require_once(__DIR__ . "/config.php");
+require_once(__DIR__ . "/con_info.php");
+require_once(__DIR__ . "/offering.php");
+require_once(__DIR__ . "/db_common_functions.php");
+require_once(__DIR__ . "/format_functions.php");
 
 $ini = read_ini();
 $db = connect_to_db($ini);
