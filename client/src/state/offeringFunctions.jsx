@@ -1,3 +1,4 @@
+import store from "./store";
 
 export function renderPrice(offering) {
     let price = renderPriceAsString(offering);
@@ -78,4 +79,10 @@ const isDifferentVariantAmountsPresent = (offering) => {
     } else {
         return false;
     }
+}
+
+export const findOfferingById = (offeringId) => {
+    let offerings = store.getState()?.offerings?.items?.filter(o => o.id === offeringId);
+    console.log(offeringId, offerings);
+    return offerings?.length ? offerings[0] : null;
 }

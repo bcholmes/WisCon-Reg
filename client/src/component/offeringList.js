@@ -669,7 +669,7 @@ class OfferingList extends Component {
             message = "The minimum amount is " + offering.currency + " " + formatAmount(offering.minimumPrice, offering.currency);
         } else if (this.isVariableAmount(offering) && offering.maximumPrice != null && value > offering.maximumPrice) {
             message = "The maximum amount is " + offering.currency + " " + formatAmount(offering.maximumPrice, offering.currency);
-        } else if (value === "0") {
+        } else if (value === "0" && !this.isVariantSelectionRequired()) {
             message = "Please choose an amount greater than zero.";
         }
         return message

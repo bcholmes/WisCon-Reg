@@ -150,7 +150,7 @@ class RegistrationsPage extends Component {
     renderConButton() {
         if (this.props.currentCon != null || this.state.con != null) {
             let con = this.state.con != null ? this.state.con : this.props.currentCon;
-            return (<Button variant='link' className="text-muted" type="button" 
+            return (<Button variant='link' className="text-muted" type="button"
                 onClick={() => { this.setState((state) => ({...state, showConSelection: true }))}}
                 >
                 <span className="small">{con.name}</span></Button>);
@@ -196,8 +196,8 @@ class RegistrationsPage extends Component {
                 orderedLinks.push({ name: '»', link: this.state.links['end'] });
             }
             let items = orderedLinks.map((link, i) => {
-                let active = (this.state.pagination && this.state.pagination.page != null) 
-                    ? (((this.state.pagination.page + 1).toString()) === link['name'] ? "active" : "") 
+                let active = (this.state.pagination && this.state.pagination.page != null)
+                    ? (((this.state.pagination.page + 1).toString()) === link['name'] ? "active" : "")
                     : "";
                 let pageItemClass = "page-item " + active;
                 return (<li className={pageItemClass} key={'link-' + i}><a className="page-link" href="./admin" onClick={(e) => {e.preventDefault(); this.loadDataWithUrl(link['link']);}}>{link['name']}</a></li>);
@@ -294,14 +294,20 @@ class RegistrationsPage extends Component {
     }
 
     loadDataWithFilter(term) {
-        if (term) {
+        if (term && this.state.con) {
+            this.loadDataWithUrl('/api/registrations_list.php?term=' + term + "&conId=" + this.state.con?.id);
+        } else if (term) {
             this.loadDataWithUrl('/api/registrations_list.php?term=' + term);
         } else {
             this.loadData();
         }
     }
     loadData() {
-        this.loadDataWithUrl('/api/registrations_list.php');
+        if (this.state.con) {
+            this.loadDataForCon(this.state.con);
+        } else {
+            this.loadDataWithUrl('/api/registrations_list.php');
+        }
     }
     loadDataForCon(con) {
         this.loadDataWithUrl('/api/registrations_list.php?conId=' + con.id);

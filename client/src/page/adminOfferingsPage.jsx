@@ -1,4 +1,5 @@
 import React from 'react';
+import Badge from 'react-bootstrap/Badge';
 import Container from 'react-bootstrap/esm/Container';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -60,22 +61,44 @@ class AdminOfferingsPage extends React.Component {
         history.push('/');
     }
 
+    goToOfferingForm(offering) {
+        const { history } = this.props;
+        history.push('/admin/offerings/' + offering.id);
+    }
+
+    renderDateRange(startTime, endTime) {
+        if (startTime && endTime) {
+            return dayjs(startTime).format('ddd, MMM D, YYYY') + ' - ' + dayjs(endTime).format('ddd, MMM D, YYYY');
+        } else {
+            return null;
+        }
+    }
+
+    renderOptions(offering) {
+        return (<>
+            {offering.isMembership ? <Badge variant="primary" className="mr-1">Membership</Badge> : null}
+            {offering.addPrompts ? <Badge variant="primary" className="mr-1">Volunteer prompts</Badge> : null}
+            {(offering.emailRequired === 'REQUIRED' || offering.emailRequired === 'REQUIRED') ? <Badge variant="primary" className="mr-1">Email</Badge> : null}
+            {offering.isDonation ? <Badge variant="primary" className="mr-1">Donation</Badge> : null}
+        </>)
+    }
+
     renderOfferingRows(offering) {
         if (offering?.variants?.length) {
-            return offering.variants.map(v => (<tr key={'offering-'+offering.id + '-' + v.id}>
+            return offering.variants.map(v => (<tr key={'offering-'+offering.id + '-' + v.id} role="button" onClick={() => this.goToOfferingForm(offering)}>
                     <td>{offering.title}</td>
                     <td>{v.name}</td>
                     <td className="text-center">{renderAmountAsHtml(v.suggestedPrice, offering.currency, false)}</td>
-                    <td>To be provided</td>
-                    <td></td>
+                    <td>{this.renderDateRange(offering.startTime, offering.endTime)}</td>
+                    <td>{this.renderOptions(offering)}</td>
                 </tr>));
         } else {
-            return (<tr key={'offering-'+offering.id}>
+            return (<tr key={'offering-'+offering.id} role="button" onClick={() => this.goToOfferingForm(offering)}>
                     <td>{offering.title}</td>
                     <td></td>
                     <td className="text-center">{renderPrice(offering)}</td>
-                    <td>To be provided</td>
-                    <td></td>
+                    <td>{this.renderDateRange(offering.startTime, offering.endTime)}</td>
+                    <td>{this.renderOptions(offering)}</td>
                 </tr>);
         }
     }

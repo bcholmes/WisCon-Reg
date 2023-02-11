@@ -60,6 +60,8 @@ class Offering {
     public $variants;
     public $quantity;
     public $purchaseCount;
+    public $startTime;
+    public $endTime;
 
     function hasRemainingQuantity() {
         if ($this->quantityPoolId === null || $this->quantity === null) {
@@ -93,7 +95,8 @@ class Offering {
      SELECT
             o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
             o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required,
-            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id, p.quantity
+            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id, p.quantity,
+            o.start_time, o.end_time
        FROM
             reg_offering o
       LEFT OUTER JOIN reg_offering_highlight h
@@ -145,6 +148,8 @@ EOD;
                     $item->quantityPoolId = $row->quantity_pool_id;
                     $item->relatedOfferingId = $row->related_offering_id;
                     $item->quantity = $row->quantity;
+                    $item->startTime = convert_database_date_to_date($row->start_time);
+                    $item->endTime = convert_database_date_to_date($row->end_time);
                 }
                 if ($row->highlight_text) {
                     $highlight_list = $item->highlights;
@@ -251,6 +256,14 @@ EOD;
         if ($this->quantityPoolId) {
             $result["quantityPoolId"] = $this->quantityPoolId;
             $result["remaining"] = $this->getRemainingQuantity();
+        }
+
+        if ($this->startTime) {
+            $result["startTime"] = $this->startTime->format(DateTime::ATOM);
+        }
+
+        if ($this->endTime) {
+            $result["endTime"] = $this->endTime->format(DateTime::ATOM);
         }
 
         if ($this->variants != null) {

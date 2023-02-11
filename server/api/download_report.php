@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,19 +46,22 @@ try {
             http_response_code(401);
         } else {
             $query = <<<EOD
-        SELECT 
+        SELECT
                 o.id, o.confirmation_email, o.status, o.payment_method, o.finalized_date, i.for_name, i.email_address, i.amount, off.title,
-                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.status as item_status, 
-                o.con_id, o.at_door_payment_method
-        FROM 
+                i.email_ok, i.volunteer_ok, i.snail_mail_ok, off.add_prompts, i.age, off.age_required, i.status as item_status,
+                o.con_id, o.at_door_payment_method, v.name as option_name
+        FROM
                 reg_order o
         LEFT OUTER JOIN reg_order_item i
                 ON
                     o.id = i.order_id
+        LEFT OUTER JOIN reg_offering_variant v
+                ON
+                    v.id = i.variant_id
         LEFT OUTER JOIN reg_offering off
-                ON 
-                    i.offering_id = off.id
-        WHERE (o.con_id = ? or off.con_id = ?)
+        ON
+            i.offering_id = off.id
+            WHERE (o.con_id = ? or off.con_id = ?)
             AND o.status != 'IN_PROGRESS'
         ORDER BY o.finalized_date, o.id, i.id
     EOD;
@@ -69,9 +72,9 @@ try {
 
                 header("Content-disposition: attachment; filename=" . str_replace(' ', '_', strtolower($requestedConData->name)) .  "-registration-" . $formattedDate . ".csv");
                 header('Content-type: text/csv');
-                echo 'Order Number, Confirmation Sent To, Purchase Item, Check-out Date, Paid, Amount, Name, Email, Payment Method, Send Email, Volunteer, Snail Mail OK, Age of Child';
+                echo 'Order Number, Confirmation Sent To, Purchase Item, Variant, Check-out Date, Paid, Amount, Name, Email, Payment Method, Send Email, Volunteer, Snail Mail OK, Age of Child';
                 echo "\n";
-                
+
                 $result = mysqli_stmt_get_result($stmt);
                 $cons = array();
                 while ($row = mysqli_fetch_object($result)) {
@@ -86,8 +89,9 @@ try {
                         $paid = 'Yes';
                     }
 
-                    echo "\"" . $row->id . "\",\"" . $row->confirmation_email . "\",\"" . $row->title . "\",\"" . $row->finalized_date . "\"," . 
-                        $paid . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" . 
+                    echo "\"" . $row->id . "\",\"" . $row->confirmation_email . "\",\"" . $row->title . "\",\"" .
+                        ($row->option_name ? $row->option_name  : "") . "\",\"" . $row->finalized_date . "\"," .
+                        $paid . ',' . $row->amount . ",\"" . $row->for_name . "\",\"" . $row->email_address . "\",\"" .
                         format_payment_type_for_display($row->payment_method, $locale) . "\"";
                     if ($row->add_prompts == 'N') {
                         echo ",\"\",\"\",\"\"";

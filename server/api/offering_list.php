@@ -19,6 +19,7 @@ require_once("config.php");
 require_once("con_info.php");
 require_once("offering.php");
 require_once("db_common_functions.php");
+require_once("format_functions.php");
 
 $ini = read_ini();
 $db = connect_to_db($ini);

@@ -29,13 +29,20 @@ function implode_and_escape_ids($db, $ids) {
     return $idList;
 }
 
-function connect_to_db($db_ini) {
+function connect_to_db($db_ini, $setTimezone = false) {
     $db = mysqli_connect($db_ini['mysql']['host'], $db_ini['mysql']['user'], $db_ini['mysql']['password'], $db_ini['mysql']['db_name']);
     if (!$db) {
         throw new DatabaseException("Could not connect to database");
     } else {
         mysqli_set_charset($db, "utf8");
         mysqli_query($db, "SET SESSION sql_mode = ''");
+
+        if ($setTimezone) {
+            $query = "SET time_zone = 'US/Central';";
+            if (!mysqli_query($db, $query)) {
+                throw new DatabaseSqlException("Could not process timezone change: $query");
+            }
+        }
         return $db;
     }
 }
