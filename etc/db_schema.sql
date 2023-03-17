@@ -70,6 +70,9 @@ create table reg_offering_variant (
         ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+alter table reg_offering_variant add column related_variant_id int(11);
+alter table reg_offering_variant add foreign key (related_variant_id) references reg_offering_variant(id);
+
 insert into reg_perennial_con_info (name, website_url)
 values ('WisCon', 'https://wiscon.net');
 

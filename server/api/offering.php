@@ -27,13 +27,15 @@ class Variant {
     public $isDefault;
     public $minimumPrice;
     public $maximumPrice;
+    public $relatedVariantId;
 
     function asJson() {
         return array("id" => $this->id,
             "name" => $this->name,
             "description" => $this->description,
             "isDefault" => $this->isDefault,
-            "suggestedPrice" => $this->suggestedPrice
+            "suggestedPrice" => $this->suggestedPrice,
+            "relatedVariantId" => $this->relatedVariantId
         );
     }
 }
@@ -57,12 +59,34 @@ class Offering {
     public $isDonation;
     public $isRestricted;
     public $quantityPoolId;
-    public $relatedOfferingId;
     public $variants;
     public $quantity;
     public $purchaseCount;
     public $startTime;
     public $endTime;
+
+
+    static function findVariantById($offeringList, $variantId) {
+        foreach ($offeringList as $o) {
+            foreach ($o->variants as $v) {
+                if ($v->id == $variantId) {
+                    return $v;
+                }
+            }
+        }
+        return null;
+    }
+
+    static function findOfferingByVariantId($offeringList, $variantId) {
+        foreach ($offeringList as $o) {
+            foreach ($o->variants as $v) {
+                if ($v->id == $variantId) {
+                    return $o;
+                }
+            }
+        }
+        return null;
+    }
 
     function hasRemainingQuantity() {
         if ($this->quantityPoolId === null || $this->quantity === null) {
@@ -96,7 +120,7 @@ class Offering {
      SELECT
             o.id, o.title, o.minimum_price, o.currency, o.suggested_price, o.maximum_price,
             o.description, o.is_membership, o.add_prompts, o.emphasis, o.email_required, h.highlight_text, o.address_required,
-            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, o.related_offering_id, p.quantity,
+            o.age_required, o.is_donation, o.quantity_pool_id, o.restricted_access, p.quantity,
             o.start_time, o.end_time
        FROM
             reg_offering o
@@ -147,7 +171,6 @@ EOD;
                     $item->isDonation = ("Y" == $row->is_donation ? true : false);
                     $item->isRestricted = ("Y" == $row->restricted_access ? true : false);
                     $item->quantityPoolId = $row->quantity_pool_id;
-                    $item->relatedOfferingId = $row->related_offering_id;
                     $item->quantity = $row->quantity;
                     $item->startTime = convert_database_date_to_date($row->start_time);
                     $item->endTime = convert_database_date_to_date($row->end_time);
@@ -192,7 +215,7 @@ EOD;
         }
 
         $query = <<<EOD
-        SELECT v.id, v.sort_order, v.name, v.description, v.is_default, v.offering_id, v.suggested_price
+        SELECT v.id, v.sort_order, v.name, v.description, v.is_default, v.offering_id, v.suggested_price, v.related_variant_id
         FROM reg_offering_variant v
         WHERE v.offering_id in (select o.id from reg_offering o where o.con_id = ?)
         ORDER BY v.offering_id, v.sort_order;
@@ -214,6 +237,7 @@ EOD;
                 $variant->description = $row->description;
                 $variant->isDefault = ("Y" == $row->is_default ? true : false);
                 $variant->suggestedPrice = $row->suggested_price == null ? null : (double) $row->suggested_price;
+                $variant->relatedVariantId = $row->related_variant_id;
                 $temp[] = $variant;
 
                 $variants[$offeringId] = $temp;
@@ -250,8 +274,7 @@ EOD;
             "addressRequired" => $this->addressRequired,
             "ageRequired" => $this->ageRequired,
             "isDonation" => $this->isDonation,
-            "isRestricted" => $this->isRestricted,
-            "relatedOfferingId" => $this->relatedOfferingId
+            "isRestricted" => $this->isRestricted
         );
 
         if ($this->quantityPoolId) {

@@ -1,8 +1,22 @@
 <?php
 
-require_once('../vendor/autoload.php');
+require_once(__DIR__ . '/../vendor/autoload.php');
 
 use UUID\UUID;
+
+class OrderItem {
+    public $id;
+    public $offeringId;
+    public $variantId;
+    public $amount;
+
+    function __construct($id, $offeringId, $variantId, $amount) {
+        $this->id = $id;
+        $this->offeringId = $offeringId;
+        $this->variantId = $variantId;
+        $this->amount = $amount;
+    }
+}
 
 class Order {
     public $id;
@@ -27,10 +41,10 @@ class Order {
         SET last_modified_date = now()
       WHERE id = ?;
 EOD;
-    
+
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "i", $this->id);
-    
+
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);
             return true;
@@ -86,6 +100,30 @@ EOD;
         }
     }
 
+    public function findItem($db, $itemId) {
+        $query = <<<EOD
+        SELECT amount, offering_id, variant_id
+         FROM reg_order_item
+        WHERE order_id = ?
+          AND id = ?;
+EOD;
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "ii", $this->id, $itemId);
+
+        if ($stmt->execute()) {
+            $result = null;
+            $resultSet = mysqli_stmt_get_result($stmt);
+            if (mysqli_num_rows($resultSet) == 1) {
+                $record = mysqli_fetch_object($resultSet);
+                $result = new OrderItem($itemId, $record->offering_id, $record->variant_id, $record->amount);
+            }
+            mysqli_stmt_close($stmt);
+            return $result;
+        } else {
+            throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
     public function sumActiveAmounts($db) {
 
         $query = <<<EOD
@@ -121,10 +159,32 @@ EOD;
         WHERE id in ($idList)
           AND order_id = ?;
 EOD;
-    
+
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "i", $this->id);
-    
+
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+            return $this->updateLastModifiedDate($db);
+        } else {
+            throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
+    public function convertItemToVariant($db, $itemId, $newOfferingId, $newVariantId, $newAmount) {
+
+        $query = <<<EOD
+        UPDATE reg_order_item
+           SET offering_id = ?,
+               variant_id = ?,
+               amount = ?
+        WHERE id = ?
+          AND order_id = ?;
+EOD;
+
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "iiiii", $newOfferingId, $newVariantId, $newAmount, $itemId, $this->id);
+
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);
             return $this->updateLastModifiedDate($db);
@@ -135,14 +195,14 @@ EOD;
 
     private function findOrderById($db, $orderId) {
         $query = <<<EOD
-     SELECT 
+     SELECT
             o.id, o.status, o.payment_intent_id, o.payment_method, o.confirmation_email, o.payment_date, o.finalized_date
-       FROM 
+       FROM
             reg_order o
-      WHERE 
+      WHERE
             o.id = ?;
      EOD;
-    
+
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "i", $orderId);
         if (mysqli_stmt_execute($stmt)) {
@@ -161,11 +221,11 @@ EOD;
 
     public function createDuplicateOrderForNextYear($db, $nextCon) {
         $query = <<<EOD
-        insert into reg_order 
-               (order_uuid, `status`, creation_date, last_modified_date, payment_date, 
+        insert into reg_order
+               (order_uuid, `status`, creation_date, last_modified_date, payment_date,
                payment_method, con_id, finalized_date, confirmation_email, payment_intent_id, orig_order_id)
-        select ?, `status`, creation_date, CURRENT_TIMESTAMP(), payment_date, payment_method, ?, finalized_date, 
-               confirmation_email, payment_intent_id, id 
+        select ?, `status`, creation_date, CURRENT_TIMESTAMP(), payment_date, payment_method, ?, finalized_date,
+               confirmation_email, payment_intent_id, id
           from reg_order
          where id = ?;
 EOD;
@@ -173,7 +233,7 @@ EOD;
 
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "sii", $uuid, $nextCon->id, $this->id);
-    
+
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);
 

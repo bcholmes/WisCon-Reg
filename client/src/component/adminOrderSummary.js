@@ -66,7 +66,7 @@ class AdminOrderSummary extends Component {
 
             let updateForm = undefined;
             if (isAdmin()) {
-                updateForm = (this.state.updateMode) 
+                updateForm = (this.state.updateMode)
                     ? (<Form onSubmit={(e) => this.updateOrder(e)}>
                         <Form.Group controlId="action" className="row">
                             <div className="offset-md-3 col-md-6">
@@ -84,8 +84,8 @@ class AdminOrderSummary extends Component {
                             <Button variant="link" onClick={() => this.updateMode(false)} >
                                 Cancel
                             </Button>
-                            <LoadingButton variant="primary" className="ml-3" key="update-button" 
-                                enabled={this.isUpdateEnabled()} loading={this.state.updating} text="Update" 
+                            <LoadingButton variant="primary" className="ml-3" key="update-button"
+                                enabled={this.isUpdateEnabled()} loading={this.state.updating} text="Update"
                                 onClick={() => this.updateOrder()} />
                         </div>
                     </Form>)
@@ -101,7 +101,7 @@ class AdminOrderSummary extends Component {
                     </Button>
                 </div>);
             }
-            
+
             let paymentDate = this.state.order.paymentDate ? (<time dateTime={this.state.order.paymentDate}>{this.state.order.paymentDateSimple}</time>) : undefined;
             content = (
                 <section>
@@ -170,7 +170,7 @@ class AdminOrderSummary extends Component {
         }
         return (<tr key={i} className={item.status ? "inactive-order" : ""}>
             {option}
-            <td>{item.title}</td>
+            <td>{item.title + (item.variantName ? ': ' + item.variantName : '')}</td>
             <td>{item.for}</td>
             <td>{item.emailAddress}</td>
             <td className="text-right"><small className="text-muted">{item.currency}</small> {formatAmount(item.amount, item.currency)}</td>
@@ -291,7 +291,6 @@ class AdminOrderSummary extends Component {
         this.setState((state) => {
             let items = state.values.items ? { ...state.values.items } : {};
             items[itemId] = newItems;
-            console.log(items);
             return {
                 ...state,
                 values: {
@@ -313,6 +312,27 @@ class AdminOrderSummary extends Component {
         }
     }
 
+    findVariant(variantId) {
+        if (variantId === null) {
+            return null;
+        } else {
+            let variant = null;
+            let offering = null;
+            store.getState().offerings.items.forEach(o => {o.variants?.forEach(v => {
+                if (v.id === variantId) {
+                    variant = v;
+                    offering = o;
+                }
+            })} );
+            return { variant, offering };
+        }
+    }
+
+    isRelatedVariantPresent(item) {
+        let related = this.findVariant(item.variantId);
+        return related?.variant?.relatedVariantId != null;
+    }
+
     allLineByLineOptions(item) {
         let result = [];
         if (this.state.order) {
@@ -321,9 +341,19 @@ class AdminOrderSummary extends Component {
             } else if (this.state.order.paymentMethodKey === 'CARD') {
                 result.push({ "value": "REFUND", "text": "Refund item"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
+                if (this.isRelatedVariantPresent(item)) {
+                    let { variant } = this.findVariant(item.variantId);
+                    let related = this.findVariant(variant.relatedVariantId);
+                    result.push({ "value": "CONVERT", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
+                }
             } else {
                 result.push({ "value": "REFUND", "text": "Refund item (manual return)"});
                 result.push({ "value": "DEFER", "text": "Defer to next year"});
+                if (this.isRelatedVariantPresent(item)) {
+                    let { variant } = this.findVariant(item.variantId);
+                    let related = this.findVariant(variant.relatedVariantId);
+                    result.push({ "value": "CONVERT", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
+                }
             }
         }
         return result;
@@ -402,7 +432,7 @@ class AdminOrderSummary extends Component {
             this.setState((state) => ({
                 ...state,
                 updating: false,
-            }))    
+            }))
             this.backToRegistrationsList();
         })
         .catch(error => {
@@ -425,7 +455,7 @@ class AdminOrderSummary extends Component {
                 this.setState((state) => ({
                     ...state,
                     loading: false,
-                    message: undefined, 
+                    message: undefined,
                     order: res.data,
                     updateMode: false
                 }))

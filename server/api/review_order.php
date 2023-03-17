@@ -1,12 +1,12 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,12 +23,16 @@ require_once("authentication.php");
 
 function find_order_items($db, $orderId) {
     $query = <<<EOD
-    SELECT 
-           i.id, i.for_name, i.email_address, i.amount, o.currency, o.title, i.status, o.related_offering_id
-      FROM 
-           reg_order_item i, reg_offering o
-     WHERE 
-           i.offering_id = o.id AND
+    SELECT
+           i.id, i.for_name, i.email_address, i.amount, o.currency, o.title, i.status, i.variant_id, v.name
+      FROM
+           reg_order_item i
+           JOIN reg_offering o ON i.offering_id = o.id
+           LEFT OUTER JOIN
+           reg_offering_variant v
+                ON
+                    i.variant_id = v.id
+     WHERE
            i.order_id  = ?;
     EOD;
 
@@ -47,7 +51,8 @@ function find_order_items($db, $orderId) {
                 "amount" => $row->amount,
                 "title" => $row->title,
                 "status" => $row->status,
-                "relatedOfferingId" => $row->related_offering_id,
+                "variantId" => $row->variant_id,
+                "variantName" => $row->name
             );
             array_push($items, $item);
         }
@@ -60,11 +65,11 @@ function find_order_items($db, $orderId) {
 
 function find_order_and_items_by_order_uuid($db, $conData, $order_uuid, $locale) {
     $query = <<<EOD
- SELECT 
+ SELECT
         o.id, o.status, o.confirmation_email, o.payment_method, o.finalized_date, o.payment_date, o.con_id
-   FROM 
+   FROM
         reg_order o
-  WHERE 
+  WHERE
         o.order_uuid = ?;
  EOD;
 

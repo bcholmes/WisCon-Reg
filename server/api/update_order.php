@@ -1,38 +1,39 @@
 <?php
 // Copyright 2021 BC Holmes
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //    http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-require_once('../vendor/autoload.php');
+require_once(__DIR__ . '/../vendor/autoload.php');
 
-require_once("config.php");
-require_once("db_common_functions.php");
-require_once("email_functions.php");
-require_once("email_composer.php");
-require_once("format_functions.php");
-require_once("jwt_functions.php");
-require_once("zambia_functions.php");
-require_once("authentication.php");
-require_once("order.php");
-require_once("planz.php");
-require_once("stripe_helper.php");
+require_once(__DIR__ . "/config.php");
+require_once(__DIR__ . "/db_common_functions.php");
+require_once(__DIR__ . "/email_functions.php");
+require_once(__DIR__ . "/email_composer.php");
+require_once(__DIR__ . "/format_functions.php");
+require_once(__DIR__ . "/jwt_functions.php");
+require_once(__DIR__ . "/zambia_functions.php");
+require_once(__DIR__ . "/authentication.php");
+require_once(__DIR__ . "/order.php");
+require_once(__DIR__ . "/planz.php");
+require_once(__DIR__ . "/stripe_helper.php");
+require_once(__DIR__ . "/offering.php");
 
 /**
  * There are two reasons why we might not want to refund everything:
- * 
+ *
  * 1. We might have already done a partial refund. The refunded items have a non-null status.
  * 2. Some items might have been deferred to next year: those items should have a different
- *    
+ *
  */
 function process_stripe_refund($ini, $db, $order) {
     $o = new Order($order);
@@ -60,7 +61,7 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
         remove_order_registrations($db, $conData, $orderId);
 
         $query = <<<EOD
-        UPDATE reg_order 
+        UPDATE reg_order
         SET con_id = ?,
             last_modified_date = CURRENT_TIMESTAMP()
     WHERE id = ?;
@@ -76,7 +77,7 @@ function defer_order_to_later($db, $conData, $nextCon, $orderId) {
         }
 
         $query = <<<EOD
-        UPDATE reg_program_link 
+        UPDATE reg_program_link
         SET con_id = ?
     WHERE order_item_id in (select id from reg_order_item where order_id = ?);
     EOD;
@@ -100,9 +101,9 @@ function convert_to_donation($db, $donationType, $orderId) {
     mysqli_begin_transaction($db);
     try {
         $query = <<<EOD
-            UPDATE reg_order_item 
-            SET offering_id = ? 
-        WHERE order_id = ? 
+            UPDATE reg_order_item
+            SET offering_id = ?
+        WHERE order_id = ?
         AND offering_id NOT IN (select id from reg_offering where is_donation = 'Y');
         EOD;
 
@@ -163,10 +164,12 @@ function select_only_ids($items) {
     return $result;
 }
 
-function process_line_by_line_items($ini, $db, $items, $order) {
+function process_line_by_line_items($ini, $db, $items, $order, $conInfo) {
     mysqli_begin_transaction($db);
     try {
         $o = new Order($order);
+
+        $refundAmount = 0;
 
         // handle the refunded items
         $subList = filter_items_by_action($items, 'REFUND');
@@ -177,12 +180,35 @@ function process_line_by_line_items($ini, $db, $items, $order) {
 
             if ($o->isCardPaymentMethod()) {
                 // figure out refund amount
-                $amount = $o->sumAmounts($db, $itemIds) * 100;
-
-                // process partial refund
-                $stripeHelper = new StripeHelper($ini);
-                $stripeHelper->refundPartialAmount($o, $amount);
+                $refundAmount += $o->sumAmounts($db, $itemIds) * 100;
             }
+        }
+
+        // handle the refunded items
+        $subList = filter_items_by_action($items, 'CONVERT');
+        if (count($subList) > 0) {
+            $offerings = Offering::findAllByCon($db, $conInfo);
+
+            foreach ($subList as $i) {
+                $item = $o->findItem($db, $i['id']);
+                $currentVariant = Offering::findVariantById($offerings, $item->variantId);
+                $newVariant = Offering::findVariantById($offerings, $currentVariant->relatedVariantId);
+                $newOffering = Offering::findOfferingByVariantId($offerings, $currentVariant->relatedVariantId);
+                if ($currentVariant != null && $newVariant != null && $newOffering != null) {
+                    $o->convertItemToVariant($db, $item->id, $newOffering->id, $newVariant->id, $newVariant->suggestedPrice);
+                    PlanZ::alterMembership($db, $o->id, $item->id, $newOffering->title);
+
+                    if ($o->isCardPaymentMethod()) {
+                        $refundAmount += ($item->amount - $newVariant->suggestedPrice) * 100;
+                    }
+                }
+            }
+        }
+
+        if ($o->isCardPaymentMethod() && $refundAmount > 0) {
+            // process partial refund
+            $stripeHelper = new StripeHelper($ini);
+            $stripeHelper->refundPartialAmount($o, $refundAmount);
         }
 
         // handle the deferred items
@@ -251,7 +277,7 @@ try {
                     PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     http_response_code(201);
                 } else if ($data['action'] === 'LINE_BY_LINE' && array_key_exists('items', $data)) {
-                    process_line_by_line_items($ini, $db, $data['items'], $order);
+                    process_line_by_line_items($ini, $db, $data['items'], $order, $conData);
                     http_response_code(201);
                 } else {
                     http_response_code(400);

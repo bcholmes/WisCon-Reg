@@ -12,22 +12,22 @@ class PlanZ {
         $query = <<<EOD
         UPDATE `CongoDump`
            SET regtype = NULL
-         WHERE badgeid in 
+         WHERE badgeid in
          (select badgeid from reg_program_link
             WHERE order_item_id in (select id from reg_order_item where order_id = ?)
              $idClause );
 EOD;
-    
+
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "i", $orderId);
-    
+
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);
         } else {
             throw new DatabaseSqlException($query);
         }
         $query = <<<EOD
-        UPDATE reg_program_link 
+        UPDATE reg_program_link
         SET con_id = ?
     WHERE order_item_id in (select id from reg_order_item where order_id = ?)
         $idClause;
@@ -42,6 +42,26 @@ EOD;
         }
     }
 
+    public static function alterMembership($db, $orderId, $orderItemId, $membershipTypeName) {
+        $query = <<<EOD
+        UPDATE `CongoDump`
+           SET regtype = ?
+         WHERE badgeid in
+         (select badgeid from reg_program_link
+            WHERE order_item_id = ?
+              AND order_item_id in (select id from reg_order_item where order_id = ?));
+EOD;
+
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "sii", $membershipTypeName, $orderItemId, $orderId);
+
+        if ($stmt->execute()) {
+            mysqli_stmt_close($stmt);
+        } else {
+            throw new DatabaseSqlException($query);
+        }
+    }
+
     public static function removeMemberships($db, $orderId, $items) {
         $idClause = "";
         if ($items != null) {
@@ -52,15 +72,15 @@ EOD;
         $query = <<<EOD
         UPDATE `CongoDump`
            SET regtype = NULL
-         WHERE badgeid in 
+         WHERE badgeid in
          (select badgeid from reg_program_link
             WHERE order_item_id in (select id from reg_order_item where order_id = ?)
-             $idClause ); 
+             $idClause );
 EOD;
-    
+
         $stmt = mysqli_prepare($db, $query);
         mysqli_stmt_bind_param($stmt, "i", $orderId);
-    
+
         if ($stmt->execute()) {
             mysqli_stmt_close($stmt);
         } else {
@@ -68,7 +88,7 @@ EOD;
         }
 
         $query = <<<EOD
-        DELETE from reg_program_link 
+        DELETE from reg_program_link
     WHERE order_item_id in (select id from reg_order_item where order_id = ?)
         $idClause;
 EOD;
