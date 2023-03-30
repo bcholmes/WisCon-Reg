@@ -344,7 +344,7 @@ class AdminOrderSummary extends Component {
                 if (this.isRelatedVariantPresent(item)) {
                     let { variant } = this.findVariant(item.variantId);
                     let related = this.findVariant(variant.relatedVariantId);
-                    result.push({ "value": "CONVERT", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
+                    result.push({ "value": "CONVERT_TO_RELATED", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
                 }
             } else {
                 result.push({ "value": "REFUND", "text": "Refund item (manual return)"});
@@ -352,7 +352,7 @@ class AdminOrderSummary extends Component {
                 if (this.isRelatedVariantPresent(item)) {
                     let { variant } = this.findVariant(item.variantId);
                     let related = this.findVariant(variant.relatedVariantId);
-                    result.push({ "value": "CONVERT", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
+                    result.push({ "value": "CONVERT_TO_RELATED", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
                 }
             }
         }
@@ -374,6 +374,11 @@ class AdminOrderSummary extends Component {
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
                 if (this.state.order.items.length > 1) {
                     result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                } else if (this.state.order.items.length === 1 && this.isRelatedVariantPresent(this.state.order.items[0])) {
+                    let item = this.state.order.items[0];
+                    let { variant } = this.findVariant(item.variantId);
+                    let related = this.findVariant(variant.relatedVariantId);
+                    result.push({ "value": "CONVERT_TO_RELATED", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
                 }
             } else {
                 result.push({ "value": "REFUND", "text": "Refund (manual return)"});
@@ -381,6 +386,11 @@ class AdminOrderSummary extends Component {
                 result.push({ "value": "CONVERT_TO_DONATION", "text": "Convert to donation"});
                 if (this.state.order.items.length > 1) {
                     result.push({ "value": "LINE_BY_LINE", "text": "Line-by-line changes"});
+                } else if (this.state.order.items.length === 1 && this.isRelatedVariantPresent(this.state.order.items[0])) {
+                    let item = this.state.order.items[0];
+                    let { variant } = this.findVariant(item.variantId);
+                    let related = this.findVariant(variant.relatedVariantId);
+                    result.push({ "value": "CONVERT_TO_RELATED", "text": "Convert to " + related.offering.title + " (" + formatAmount(related.variant.suggestedPrice, related.offering.currency) + ")"});
                 }
             }
             return result;

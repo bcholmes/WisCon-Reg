@@ -131,10 +131,6 @@ class Offering {
         ON
             p.id = o.quantity_pool_id
          WHERE
-            o.start_time <= NOW()
-        AND
-            o.end_time >= NOW()
-        AND
             o.con_id = ?
         ORDER BY
             o.sort_order, o.id, h.sort_order;

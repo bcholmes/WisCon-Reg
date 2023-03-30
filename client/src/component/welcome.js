@@ -24,11 +24,12 @@ const Welcome = (props) => {
             <p>For more information about membership types, including our online memberships, visit {' '}
                 <a href="https://wiscon.net/register/" target="_blank" rel="noreferrer">https://wiscon.net/register/</a>.</p>
             <Alert variant="info">
-                <h5 className="alert-heading">Masks and Proof of Vaccination Required</h5>
+                <h5 className="alert-heading">Masks and Proof of Updated Booster Required</h5>
                 <p>
-                    All attendees, including children, must show documentation of COVID vaccination to attend, and must wear masks in
-                    convention spaces. Unvaccinated individuals, including children too young to be vaccinated, will not be able to
-                    attend WisCon 2023 in person. For more information, visit {' '}
+                    All attendees, including eligible children, must show documentation of COVID vaccination <b>including an updated
+                    (bivalent/omicron) booster</b> to attend and must wear masks in convention spaces. Unvaccinated individuals,
+                    individuals who are eligible for but who haven't received an updated booster, and children too young to be
+                    vaccinated, will not be able to attend WisCon 2023 in person. For more information, visit {' '}
                     <a href="https://www.cdc.gov/coronavirus/2019-ncov/vaccines/stay-up-to-date.html" className="alert-link" target="_blank" rel="noreferrer">
                         CDC's COVID-19 information page.
                     </a>

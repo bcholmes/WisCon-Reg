@@ -164,6 +164,39 @@ function select_only_ids($items) {
     return $result;
 }
 
+function convert_to_related($ini, $db, $order, $conInfo) {
+    mysqli_begin_transaction($db);
+    try {
+        $o = new Order($order);
+        $offerings = Offering::findAllByCon($db, $conInfo);
+
+        $items = $o->findAllItems($db);
+
+        if (count($items)) {
+            $item = $items[0];
+            $currentVariant = Offering::findVariantById($offerings, $item->variantId);
+            $newVariant = Offering::findVariantById($offerings, $currentVariant->relatedVariantId);
+            $newOffering = Offering::findOfferingByVariantId($offerings, $currentVariant->relatedVariantId);
+            if ($currentVariant != null && $newVariant != null && $newOffering != null) {
+                $o->createDuplicateOrderItem($db, $o->id, $item->id);
+                $o->convertItemToVariant($db, $item->id, $newOffering->id, $newVariant->id, $newVariant->suggestedPrice);
+                PlanZ::alterMembership($db, $o->id, $item->id, $newOffering->title);
+
+                if ($o->isCardPaymentMethod()) {
+                    $refundAmount = ($item->amount - $newVariant->suggestedPrice) * 100;
+                    $stripeHelper = new StripeHelper($ini);
+                    $stripeHelper->refundPartialAmount($o, $refundAmount);
+                }
+            }
+        }
+        mysqli_commit($db);
+    } catch (Exception $e) {
+        mysqli_rollback($db);
+        throw $e;
+    }
+}
+
+
 function process_line_by_line_items($ini, $db, $items, $order, $conInfo) {
     mysqli_begin_transaction($db);
     try {
@@ -185,7 +218,7 @@ function process_line_by_line_items($ini, $db, $items, $order, $conInfo) {
         }
 
         // handle the refunded items
-        $subList = filter_items_by_action($items, 'CONVERT');
+        $subList = filter_items_by_action($items, 'CONVERT_TO_RELATED');
         if (count($subList) > 0) {
             $offerings = Offering::findAllByCon($db, $conInfo);
 
@@ -195,6 +228,7 @@ function process_line_by_line_items($ini, $db, $items, $order, $conInfo) {
                 $newVariant = Offering::findVariantById($offerings, $currentVariant->relatedVariantId);
                 $newOffering = Offering::findOfferingByVariantId($offerings, $currentVariant->relatedVariantId);
                 if ($currentVariant != null && $newVariant != null && $newOffering != null) {
+                    $o->createDuplicateOrderItem($db, $o->id, $item->id);
                     $o->convertItemToVariant($db, $item->id, $newOffering->id, $newVariant->id, $newVariant->suggestedPrice);
                     PlanZ::alterMembership($db, $o->id, $item->id, $newOffering->title);
 
@@ -270,6 +304,9 @@ try {
                     remove_order_registrations($db, $conData, $order->id);
                     PlanZ::deferMembershipsToCon($db, $order->id, $nextCon);
                     compose_email($ini, $db, $conData, $order->confirmation_email, $order->payment_method, $order, get_client_locale(), false, true);
+                    http_response_code(201);
+                } else if ($data['action'] === 'CONVERT_TO_RELATED' && $order->status === 'PAID') {
+                    convert_to_related($ini, $db, $order, $conData);
                     http_response_code(201);
                 } else if ($data['action'] === 'DEFER') {
                     $nextCon = find_next_con($db);

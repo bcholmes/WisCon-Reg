@@ -16,6 +16,14 @@ import { formatAmount } from '../util/numberUtil';
 import { isAdmin } from '../state/authActions';
 import { renderAmountAsString, renderPrice } from '../state/offeringFunctions';
 
+import dayjs from "dayjs";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import advancedFormat from "dayjs/plugin/advancedFormat"
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(advancedFormat);
+
 class OfferingList extends Component {
 
     constructor(props) {
@@ -45,7 +53,9 @@ class OfferingList extends Component {
             )
         } else {
 
-            let offeringList = this.props.offerings.items.map((o) => {
+            let now = dayjs();
+
+            let offeringList = this.props.offerings.items.filter(o => dayjs(o.startTime).isBefore(now)).map((o) => {
                 let highlights = o.highlights.map((h, i) => {
                     return (<li key={o.id.toString + "-" + i.toString()}>{h}</li>)
                 })

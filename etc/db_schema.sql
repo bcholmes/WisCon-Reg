@@ -682,3 +682,80 @@ select max(id),
 'Our weekend membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
 25.00
 from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, start_time, end_time, description, is_membership, add_prompts, emphasis, email_required)
+values
+(2, 'One-Day In-Person Membership', 2, '2023-03-24 05:59:59', '2023-05-29 23:59:59',
+'The One-Day Membership provides access to the online portion of WisCon 2023 (visit https://wiscon.net/register/ for more information)',
+'Y', 'Y', 'N', 'REQUIRED');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'One-Day Access to programming and events.'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price, is_default)
+select max(id),
+1, 'Adult (19+) - Friday only',
+'One-day membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+0.00, 'Y'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Adult (19+) - Saturday only',
+'One-day membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+35.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Adult (19+) - Sunday only',
+'One-day membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+30.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Adult (19+) - Monday only',
+'One-day membership for adult guests (anyone 19 or older as of 2023-05-29/Memorial Day, last day of the convention).',
+0.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price, is_default)
+select max(id),
+1, 'Teen (19+) - Friday only',
+'One-day membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+0.00, 'Y'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Teen (19+) - Saturday only',
+'One-day membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+10.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Teen (19+) - Sunday only',
+'One-day membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+10.00
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+select max(id),
+1, 'Teen (19+) - Monday only',
+'One-day membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
+0.00
+from reg_offering;

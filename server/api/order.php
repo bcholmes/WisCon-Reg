@@ -124,6 +124,28 @@ EOD;
         }
     }
 
+    public function findAllItems($db) {
+        $query = <<<EOD
+        SELECT id, amount, offering_id, variant_id
+         FROM reg_order_item
+        WHERE order_id = ?;
+EOD;
+        $stmt = mysqli_prepare($db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $this->id);
+
+        if ($stmt->execute()) {
+            $result = array();
+            $resultSet = mysqli_stmt_get_result($stmt);
+            while ($record = mysqli_fetch_object($resultSet)) {
+                $result[] = new OrderItem($record->id, $record->offering_id, $record->variant_id, $record->amount);
+            }
+            mysqli_stmt_close($stmt);
+            return $result;
+        } else {
+            throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
     public function sumActiveAmounts($db) {
 
         $query = <<<EOD
@@ -241,6 +263,37 @@ EOD;
             return $this->findOrderById($db, $newId);
         } else {
             throw new DatabaseException("Update could not be processed: $query");
+        }
+    }
+
+    function createDuplicateOrderItem($db, $orderId, $itemId) {
+        mysqli_begin_transaction($db);
+        try {
+            $query = <<<EOD
+     INSERT
+            INTO reg_order_item (order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok,
+            street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id, variant_id, status)
+     SELECT order_id, for_name, email_address, item_uuid, amount, email_ok, volunteer_ok, snail_mail_ok,
+            street_line_1, street_line_2, city, state_or_province, country, zip_or_postal_code, age, offering_id, variant_id, 'CONVERTED_TO_RELATED'
+       from reg_order_item i
+     where  i.id = ?
+       AND  i.order_id = ?;
+EOD;
+
+            $stmt = mysqli_prepare($db, $query);
+            mysqli_stmt_bind_param($stmt, "ii", $itemId, $orderId);
+
+            if ($stmt->execute()) {
+                mysqli_stmt_close($stmt);
+            } else {
+                throw new DatabaseSqlException("Insert could not be processed: $query");
+            }
+
+            mysqli_commit($db);
+            return true;
+        } catch (Exception $e) {
+            mysqli_rollback($db);
+            throw $e;
         }
     }
 }
