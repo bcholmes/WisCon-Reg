@@ -392,7 +392,7 @@ alter table reg_offering add column restricted_access char(1) not null default '
 insert into reg_offering
 (sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
 values
-(100, 'BIPOC Volunteer Membership', 1, '2022-05-31 23:59:59', 0.00,
+(100, 'BIPOC Volunteer In-Person Membership', 1, '2023-05-29 23:59:59', 0.00,
 'Create a membership for a BIPOC volunteer using donated funds',
 'Y', 'N', 'YES', 'Y');
 
@@ -759,3 +759,38 @@ select max(id),
 'One-day membership for teen guests (anyone 7 to 18 as of 2023-05-29/Memorial Day, last day of the convention).',
 0.00
 from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'BIPOC Volunteer In-Person Membership', 2, '2023-05-29 23:59:59', 0.00,
+'Create a membership for a BIPOC volunteer using donated funds',
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
+from reg_offering;
+
+insert into reg_offering
+(sort_order, title, con_id, end_time, suggested_price, description, is_membership, add_prompts, email_required, restricted_access)
+values
+(100, 'BIPOC Volunteer Online Membership', 2, '2023-05-29 23:59:59', 0.00,
+'Create a membership for a BIPOC volunteer using donated funds',
+'Y', 'N', 'YES', 'Y');
+
+insert into reg_offering_highlight
+(offering_id, sort_order, highlight_text)
+select max(id),
+1, 'This is a secret item, covered with a cloak of invisibility'
+from reg_offering;
+
+insert into reg_offering_variant
+(offering_id, sort_order, name, description, suggested_price)
+values
+(25,
+4, 'Current GoH',
+'Available only to this year''s Guests of Honor.',
+0);
+

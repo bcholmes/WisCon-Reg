@@ -43,13 +43,15 @@ class OrderSummary extends Component {
 
             for (let i = 0; i < this.state.order.items.length; i++) {
                 const item = this.state.order.items[i];
-                total += (parseFloat(item.amount) || 0);
+                if (!item.status) {
+                    total += (parseFloat(item.amount) || 0);
+                }
                 currency = item.currency;
             }
 
             let rows = this.state.order.items ? this.state.order.items.map((item, i) => {
-                return (<tr key={i}>
-                    <td>{item.title}</td>
+                return (<tr key={i} className={item.status ? "inactive-order" : ""}>
+                    <td>{item.title + (item.variantName ? ': ' + item.variantName : '')}</td>
                     <td>{item.for}</td>
                     <td>{item.emailAddress}</td>
                     <td className="text-right"><small className="text-muted">{item.currency}</small> {formatAmount(item.amount, item.currency)}</td>
@@ -105,7 +107,7 @@ class OrderSummary extends Component {
             .then(res => {
                 this.setState({
                     loading: false,
-                    message: undefined, 
+                    message: undefined,
                     order: res.data
                 })
             })
